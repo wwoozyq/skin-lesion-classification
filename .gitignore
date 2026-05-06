@@ -6,6 +6,7 @@ venv/
 
 # Local data and outputs
 data/Data_Proj2/
+data/Data_Proj2
 external_data/
 outputs/models/*.pkl
 outputs/models/*.joblib
