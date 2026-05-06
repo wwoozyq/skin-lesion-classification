@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local data and outputs
+data/Data_Proj2/
+external_data/
+outputs/models/*.pkl
+outputs/models/*.joblib
+outputs/models/*.pth
+outputs/metrics/*.csv
+outputs/figures/*.png
+output.csv
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
