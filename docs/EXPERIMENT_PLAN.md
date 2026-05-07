@@ -89,10 +89,12 @@ Required:
 1. Color features only
 2. Texture features only
 3. Shape features only
-4. All features
-5. With mask vs without mask
-6. Different classifiers
-7. Class weight vs no class weight
+4. Lesion-background contrast features only
+5. All baseline features
+6. All baseline features + contrast features
+7. With mask vs without mask
+8. Different classifiers
+9. Class weight vs no class weight
 
 Optional:
 
@@ -117,4 +119,3 @@ External data should be treated carefully:
   - melanoma -> `mel`
   - melanocytic nevus -> `nv`
   - vascular lesion -> `vasc`
-

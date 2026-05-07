@@ -1,0 +1,4 @@
+method,accuracy,macro_f1,balanced_accuracy,mel_f1,nv_f1,vasc_f1,notes
+baseline_all,0.8917,0.8980,0.8908,0.86,0.90,0.93,current baseline
+contrast_only,0.8783,0.8921,0.8836,0.84,0.88,0.95,lesion-background contrast features only
+all_contrast,0.9067,0.9125,0.9028,0.88,0.91,0.94,baseline features plus contrast features
