@@ -7,7 +7,9 @@ venv/
 # Local data and outputs
 data/Data_Proj2/
 data/Data_Proj2
+data/external/isic2018_task3/
 external_data/
+outputs/external/
 outputs/models/*.pkl
 outputs/models/*.joblib
 outputs/models/*.pth

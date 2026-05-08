@@ -218,6 +218,24 @@ NV -> nv
 VASC -> vasc
 ```
 
+如果只想先跑小样本，可以直接用抽样下载脚本：
+
+```bash
+python scripts/download_isic2018_sample.py \
+  --ground_truth_csv /path/to/ISIC2018_Task3_Training_GroundTruth.csv \
+  --output_dir data/external/isic2018_task3 \
+  --max_per_class 20
+```
+
+它会按 `MEL/NV/VASC` 每类抽样，下载图片，并生成：
+
+```text
+image/
+label.csv
+manifest.csv
+summary.csv
+```
+
 ### 第二步：不要上传外部图片
 
 外部图片体积大，而且 license 是 CC BY-NC。仓库只保留：
@@ -361,6 +379,80 @@ python scripts/crop_by_pseudo_masks.py \
 > 只能粗略定位病灶区域，边界精度不足。我们因此没有将其作为真实分割标注，
 > 而是用于生成 lesion-centered crop，并将裁剪图用于深度学习和颜色纹理特征实验。
 
+## 已可实现的三类外部实验
+
+### 1. Crop 颜色/纹理特征扩展
+
+对应脚本：
+
+```text
+scripts/train_crop_color_texture.py
+```
+
+作用：
+
+```text
+用外部 lesion-centered crop 提取颜色/纹理特征，
+训练传统机器学习模型，观察这些弱 mask-free 特征在外部数据上的效果。
+```
+
+命令：
+
+```bash
+python scripts/train_crop_color_texture.py \
+  --image_dir data/external/isic2018_task3/crop \
+  --label_csv data/external/isic2018_task3/label.csv \
+  --feature_set color_texture \
+  --output_dir outputs/external/isic2018_crop_color_texture
+```
+
+### 2. 外部泛化测试
+
+对应脚本：
+
+```text
+scripts/evaluate_external_generalization.py
+```
+
+作用：
+
+```text
+先在课程数据上训练颜色/纹理模型，
+再在 ISIC crop 上测试，观察模型是否跨数据集崩掉。
+```
+
+命令：
+
+```bash
+python scripts/evaluate_external_generalization.py \
+  --train_data_dir data/Data_Proj2 \
+  --external_image_dir data/external/isic2018_task3/crop \
+  --external_label_csv data/external/isic2018_task3/label.csv \
+  --feature_set color_texture \
+  --output_dir outputs/external/isic2018_generalization
+```
+
+### 3. 模型是否崩掉的分析
+
+输出文件：
+
+```text
+outputs/external/isic2018_generalization/
+  external_generalization_metrics.csv
+  external_generalization_predictions.csv
+```
+
+看三个指标：
+
+```text
+external_accuracy
+external_macro_f1
+external_balanced_accuracy
+```
+
+如果这些指标明显低于课程数据交叉验证，说明模型对数据来源比较敏感。
+报告中可以把它解释为 domain shift，而不是单纯说模型失败。
+
 ## 队长分工建议
 
 你可以把这件事拆给一个同学：
@@ -379,9 +471,12 @@ python scripts/crop_by_pseudo_masks.py \
 ```text
 docs/external_data_report.md
 scripts/prepare_isic2018_labels.py
+scripts/download_isic2018_sample.py
 scripts/generate_pseudo_masks.py
 scripts/preview_pseudo_masks.py
 scripts/crop_by_pseudo_masks.py
+scripts/train_crop_color_texture.py
+scripts/evaluate_external_generalization.py
 data/external/README.md
 ```
 
