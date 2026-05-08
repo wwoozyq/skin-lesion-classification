@@ -60,6 +60,47 @@ def largest_component(mask):
     return labeled == largest_label
 
 
+def best_component(mask, score, min_size):
+    labeled, count = ndi.label(mask)
+    if count == 0:
+        return mask
+
+    height, width = mask.shape
+    cy = (height - 1) / 2.0
+    cx = (width - 1) / 2.0
+    image_area = max(height * width, 1)
+
+    best_label = None
+    best_value = -np.inf
+    for idx in range(1, count + 1):
+        component = labeled == idx
+        area = int(component.sum())
+        if area < min_size:
+            continue
+
+        ys, xs = np.where(component)
+        component_cy = ys.mean()
+        component_cx = xs.mean()
+        center_distance = np.sqrt(((component_cy - cy) / height) ** 2 + ((component_cx - cx) / width) ** 2)
+        center_bonus = np.exp(-center_distance * 4.0)
+
+        area_ratio = area / image_area
+        area_penalty = 1.0
+        if area_ratio > 0.35:
+            area_penalty *= 0.35 / area_ratio
+        if area_ratio < 0.005:
+            area_penalty *= area_ratio / 0.005
+
+        value = float(score[component].mean()) * np.sqrt(area) * center_bonus * area_penalty
+        if value > best_value:
+            best_value = value
+            best_label = idx
+
+    if best_label is None:
+        return largest_component(mask)
+    return labeled == best_label
+
+
 def center_weight(shape):
     height, width = shape
     yy, xx = np.mgrid[:height, :width]
@@ -98,24 +139,22 @@ def generate_mask(image):
     saturation_delta = np.abs(saturation - bg_saturation) / 255.0
     color_distance = lab_distance / max(np.percentile(lab_distance[valid], 95), 1.0)
 
-    score = 0.55 * color_distance + 0.30 * darker_than_skin + 0.15 * saturation_delta
+    # Lesions in dermoscopy are usually darker or more saturated than nearby skin.
+    # Color distance alone is too sensitive to illumination patches, so darkness
+    # gets the largest weight and components are selected by a center-aware score.
+    score = 0.25 * color_distance + 0.60 * darker_than_skin + 0.15 * saturation_delta
     score = ndi.gaussian_filter(score, sigma=max(1.0, min(height, width) / 180.0))
-    score = score * valid * center_weight((height, width))
+    weighted_score = score * valid * center_weight((height, width))
 
-    threshold = otsu_threshold(score[valid])
-    mask = (score > threshold) & valid
+    threshold = max(
+        otsu_threshold(weighted_score[valid]),
+        float(np.percentile(weighted_score[valid], 72)),
+    )
+    mask = (weighted_score > threshold) & valid
+    mask &= darker_than_skin > max(0.02, np.percentile(darker_than_skin[valid], 55))
 
     min_size = max(32, int(height * width * 0.002))
-    labeled, count = ndi.label(mask)
-    if count > 0:
-        sizes = ndi.sum(mask, labeled, index=np.arange(1, count + 1))
-        keep = np.zeros_like(mask, dtype=bool)
-        for idx, size in enumerate(sizes, start=1):
-            if size >= min_size:
-                keep |= labeled == idx
-        mask = keep
-
-    mask = largest_component(mask)
+    mask = best_component(mask, weighted_score, min_size)
     mask = ndi.binary_fill_holes(mask)
 
     structure_size = max(2, int(min(height, width) * 0.01))
@@ -123,12 +162,12 @@ def generate_mask(image):
     mask = ndi.binary_opening(mask, structure=structure)
     mask = ndi.binary_closing(mask, structure=structure)
     mask = ndi.binary_fill_holes(mask)
-    mask = largest_component(mask)
+    mask = best_component(mask, weighted_score, min_size)
 
     if mask.sum() < min_size:
-        fallback_threshold = np.percentile(score[valid], 85)
-        mask = (score > fallback_threshold) & valid
-        mask = largest_component(ndi.binary_fill_holes(mask))
+        fallback_threshold = np.percentile(weighted_score[valid], 82)
+        mask = (weighted_score > fallback_threshold) & valid
+        mask = best_component(ndi.binary_fill_holes(mask), weighted_score, min_size)
 
     return mask
 
