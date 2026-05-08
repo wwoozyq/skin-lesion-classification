@@ -3,6 +3,7 @@ from tqdm import tqdm
 
 from .dataset import list_image_ids, load_image, load_mask
 from .features_color import extract_color_features
+from .features_abcd import extract_abcd_features
 from .features_contrast import extract_contrast_features
 from .features_shape import extract_shape_features
 from .features_texture import extract_texture_features
@@ -10,14 +11,16 @@ from .features_texture import extract_texture_features
 
 def extract_features_for_image(image, mask, feature_set="all"):
     features = {}
-    if feature_set in {"all", "all_contrast", "color"}:
+    if feature_set in {"all", "all_contrast", "all_abcd", "color"}:
         features.update(extract_color_features(image, mask))
-    if feature_set in {"all", "all_contrast", "shape"}:
+    if feature_set in {"all", "all_contrast", "all_abcd", "shape"}:
         features.update(extract_shape_features(image, mask))
-    if feature_set in {"all", "all_contrast", "texture"}:
+    if feature_set in {"all", "all_contrast", "all_abcd", "texture"}:
         features.update(extract_texture_features(image, mask))
     if feature_set in {"all_contrast", "contrast"}:
         features.update(extract_contrast_features(image, mask))
+    if feature_set in {"all_abcd", "abcd"}:
+        features.update(extract_abcd_features(image, mask))
     return features
 
 

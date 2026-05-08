@@ -90,11 +90,13 @@ Required:
 2. Texture features only
 3. Shape features only
 4. Lesion-background contrast features only
-5. All baseline features
-6. All baseline features + contrast features
-7. With mask vs without mask
-8. Different classifiers
-9. Class weight vs no class weight
+5. ABCD-rule inspired features only
+6. All baseline features
+7. All baseline features + contrast features
+8. All baseline features + ABCD features
+9. With mask vs without mask
+10. Different classifiers
+11. Class weight vs no class weight
 
 Optional:
 
