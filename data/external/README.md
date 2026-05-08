@@ -12,6 +12,9 @@ data/external/isic2018_task3/
   mask/
     mask_ISIC_0024306.jpg
     ...
+  crop/
+    ISIC_0024306.jpg
+    ...
   label.csv
   manifest.csv
 ```
@@ -61,3 +64,24 @@ python scripts/preview_pseudo_masks.py \
 Only use pseudo masks for experiments after checking overlay quality. If many
 overlays are clearly wrong, use the external data for deep learning or
 color/texture features instead of shape/ABCD features.
+
+## Lesion-Centered Crops
+
+Pseudo masks are often not accurate enough for boundary-sensitive features.
+The safer use is to crop a lesion-centered image patch:
+
+```bash
+python scripts/crop_by_pseudo_masks.py \
+  --image_dir data/external/isic2018_task3/image \
+  --mask_dir data/external/isic2018_task3/mask \
+  --output_dir data/external/isic2018_task3/crop \
+  --output_size 224
+```
+
+Use these crops for:
+
+- deep learning classification
+- color features
+- texture features
+
+Do not treat pseudo-mask boundaries as manual segmentation labels.

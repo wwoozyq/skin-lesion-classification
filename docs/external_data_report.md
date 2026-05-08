@@ -271,6 +271,9 @@ data/external/isic2018_task3/
   mask/
     mask_ISIC_0024306.jpg
     ...
+  crop/
+    ISIC_0024306.jpg
+    ...
   label.csv
   manifest.csv
   summary.csv
@@ -308,11 +311,55 @@ python scripts/preview_pseudo_masks.py \
 使用原则：
 
 - 先生成 30 张 overlay 肉眼检查。
-- 如果边界大体覆盖病灶，可以用于初步 shape / ABCD 实验。
-- 如果经常包含大面积背景、黑边、毛发或标尺，就不要用于 shape / ABCD。
+- 如果边界大体覆盖病灶，可以用来生成 lesion-centered crop。
+- 不把 pseudo mask 当作真实分割标注使用。
+- 不用它做周长、圆度、边界不规则性等精细形状特征。
 - 报告中必须说明这是 pseudo mask，不是人工标注真值。
 
-这一步的价值不是替代真实分割标注，而是给外部分类数据提供一个可测试的传统图像处理入口。
+这一步的价值不是替代真实分割标注，而是给外部分类数据提供一个可测试的粗定位入口。
+
+### 推荐用途：病灶中心裁剪
+
+因为目前的传统伪 mask 边界不够精准，更稳妥的用法是把它当作 crop 工具：
+
+```text
+原图 -> pseudo mask -> 外接框加 padding -> 方形裁剪 -> resize 到 224x224
+```
+
+已提供脚本：
+
+```text
+scripts/crop_by_pseudo_masks.py
+```
+
+生成裁剪图：
+
+```bash
+python scripts/crop_by_pseudo_masks.py \
+  --image_dir data/external/isic2018_task3/image \
+  --mask_dir data/external/isic2018_task3/mask \
+  --output_dir data/external/isic2018_task3/crop \
+  --output_size 224
+```
+
+裁剪图适合用于：
+
+- 深度学习分类训练。
+- 颜色特征。
+- 纹理特征。
+- 外部数据泛化测试。
+
+不建议用于：
+
+- 精细 shape 特征。
+- ABCD 中依赖边界精度的 B 项。
+- 周长、圆度、边界粗糙度等定量结论。
+
+报告中可以写：
+
+> 由于外部分类数据不提供人工分割 mask，传统阈值方法生成的 pseudo mask
+> 只能粗略定位病灶区域，边界精度不足。我们因此没有将其作为真实分割标注，
+> 而是用于生成 lesion-centered crop，并将裁剪图用于深度学习和颜色纹理特征实验。
 
 ## 队长分工建议
 
@@ -334,6 +381,7 @@ docs/external_data_report.md
 scripts/prepare_isic2018_labels.py
 scripts/generate_pseudo_masks.py
 scripts/preview_pseudo_masks.py
+scripts/crop_by_pseudo_masks.py
 data/external/README.md
 ```
 
