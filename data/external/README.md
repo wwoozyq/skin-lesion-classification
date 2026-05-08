@@ -6,8 +6,11 @@ Recommended local layout:
 
 ```text
 data/external/isic2018_task3/
-  images/
+  image/
     ISIC_0024306.jpg
+    ...
+  mask/
+    mask_ISIC_0024306.jpg
     ...
   label.csv
   manifest.csv
@@ -31,3 +34,30 @@ VASC -> vasc
 
 The generated files are small and may be used for local experiments. The image
 files themselves should stay local.
+
+## Optional Pseudo Masks
+
+ISIC 2018 Task 3 is a classification dataset. It does not provide one lesion
+mask for each training image. If you want to test traditional shape or ABCD
+features on external images, generate pseudo masks first:
+
+```bash
+python scripts/generate_pseudo_masks.py \
+  --image_dir data/external/isic2018_task3/image \
+  --output_dir data/external/isic2018_task3/mask \
+  --max_images 100
+```
+
+Then create overlays for manual inspection:
+
+```bash
+python scripts/preview_pseudo_masks.py \
+  --image_dir data/external/isic2018_task3/image \
+  --mask_dir data/external/isic2018_task3/mask \
+  --output_dir outputs/figures/pseudo_mask_preview \
+  --max_images 30
+```
+
+Only use pseudo masks for experiments after checking overlay quality. If many
+overlays are clearly wrong, use the external data for deep learning or
+color/texture features instead of shape/ABCD features.

@@ -249,6 +249,71 @@ external_isic2018_generalization_test
 > 我们没有直接将其用于所有传统形状特征，而是将其作为深度学习预训练、
 > 颜色纹理特征扩展和跨数据集泛化测试的候选数据源。
 
+## 伪 mask 预处理方案
+
+如果后续确实想把 ISIC 2018 Task 3 用到形状、边界或 ABCD 特征里，
+可以先生成传统图像处理伪 mask。
+
+已提供脚本：
+
+```text
+scripts/generate_pseudo_masks.py
+scripts/preview_pseudo_masks.py
+```
+
+推荐目录：
+
+```text
+data/external/isic2018_task3/
+  image/
+    ISIC_0024306.jpg
+    ...
+  mask/
+    mask_ISIC_0024306.jpg
+    ...
+  label.csv
+  manifest.csv
+  summary.csv
+```
+
+生成前 100 张伪 mask：
+
+```bash
+python scripts/generate_pseudo_masks.py \
+  --image_dir data/external/isic2018_task3/image \
+  --output_dir data/external/isic2018_task3/mask \
+  --max_images 100
+```
+
+生成 overlay 预览图：
+
+```bash
+python scripts/preview_pseudo_masks.py \
+  --image_dir data/external/isic2018_task3/image \
+  --mask_dir data/external/isic2018_task3/mask \
+  --output_dir outputs/figures/pseudo_mask_preview \
+  --max_images 30
+```
+
+伪 mask 算法大致流程：
+
+1. 读取 RGB 图像。
+2. 去掉接近纯黑的边框区域。
+3. 从图像边缘估计皮肤背景颜色。
+4. 在 Lab 颜色距离、亮度差异和饱和度差异上构造病灶分数。
+5. 使用 Otsu 阈值分割候选区域。
+6. 保留较大的连通区域，填洞，做形态学开闭运算。
+7. 保存为 `mask_<image_id>.jpg`。
+
+使用原则：
+
+- 先生成 30 张 overlay 肉眼检查。
+- 如果边界大体覆盖病灶，可以用于初步 shape / ABCD 实验。
+- 如果经常包含大面积背景、黑边、毛发或标尺，就不要用于 shape / ABCD。
+- 报告中必须说明这是 pseudo mask，不是人工标注真值。
+
+这一步的价值不是替代真实分割标注，而是给外部分类数据提供一个可测试的传统图像处理入口。
+
 ## 队长分工建议
 
 你可以把这件事拆给一个同学：
@@ -267,6 +332,8 @@ external_isic2018_generalization_test
 ```text
 docs/external_data_report.md
 scripts/prepare_isic2018_labels.py
+scripts/generate_pseudo_masks.py
+scripts/preview_pseudo_masks.py
 data/external/README.md
 ```
 
