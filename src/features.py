@@ -2,6 +2,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from .dataset import list_image_ids, load_image, load_mask
+from .features_abcd import extract_abcd_features, extract_abcd_v2_features
 from .features_color import extract_color_features
 from .features_shape import extract_shape_features
 from .features_texture import extract_texture_features
@@ -9,12 +10,16 @@ from .features_texture import extract_texture_features
 
 def extract_features_for_image(image, mask, feature_set="all"):
     features = {}
-    if feature_set in {"all", "color"}:
+    if feature_set in {"all", "all_abcd", "all_abcd_v2", "color"}:
         features.update(extract_color_features(image, mask))
-    if feature_set in {"all", "shape"}:
+    if feature_set in {"all", "all_abcd", "all_abcd_v2", "shape"}:
         features.update(extract_shape_features(image, mask))
-    if feature_set in {"all", "texture"}:
+    if feature_set in {"all", "all_abcd", "all_abcd_v2", "texture"}:
         features.update(extract_texture_features(image, mask))
+    if feature_set in {"all_abcd", "abcd"}:
+        features.update(extract_abcd_features(image, mask))
+    if feature_set in {"all_abcd_v2", "abcd_v2"}:
+        features.update(extract_abcd_v2_features(image, mask))
     return features
 
 
@@ -30,4 +35,3 @@ def build_feature_table(data_dir, image_ids=None, feature_set="all"):
         row.update(extract_features_for_image(image, mask, feature_set=feature_set))
         rows.append(row)
     return pd.DataFrame(rows)
-

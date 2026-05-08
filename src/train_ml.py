@@ -67,11 +67,14 @@ def train_ml(data_dir, feature_set="all"):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", required=True)
-    parser.add_argument("--feature_set", default="all", choices=["all", "color", "shape", "texture"])
+    parser.add_argument(
+        "--feature_set",
+        default="all",
+        choices=["all", "all_abcd", "all_abcd_v2", "color", "shape", "texture", "abcd", "abcd_v2"],
+    )
     args = parser.parse_args()
     train_ml(Path(args.data_dir), args.feature_set)
 
 
 if __name__ == "__main__":
     main()
-

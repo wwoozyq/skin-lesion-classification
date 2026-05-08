@@ -89,10 +89,14 @@ Required:
 1. Color features only
 2. Texture features only
 3. Shape features only
-4. All features
-5. With mask vs without mask
-6. Different classifiers
-7. Class weight vs no class weight
+4. ABCD-rule inspired features only
+5. Enhanced ABCD features only
+6. All baseline features
+7. All baseline features + ABCD features
+8. All baseline features + enhanced ABCD features
+9. With mask vs without mask
+10. Different classifiers
+11. Class weight vs no class weight
 
 Optional:
 
@@ -117,4 +121,3 @@ External data should be treated carefully:
   - melanoma -> `mel`
   - melanocytic nevus -> `nv`
   - vascular lesion -> `vasc`
-

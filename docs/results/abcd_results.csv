@@ -1,0 +1,6 @@
+method,accuracy,macro_f1,balanced_accuracy,mel_f1,nv_f1,vasc_f1,notes
+baseline_all,0.8917,0.8980,0.8908,0.86,0.90,0.93,current baseline
+abcd_only,0.8033,0.7898,0.7631,0.80,0.82,0.75,ABCD-inspired features only
+all_abcd,0.8917,0.8980,0.8883,0.86,0.90,0.93,baseline features plus ABCD features
+abcd_v2,0.8733,0.8804,0.8696,0.84,0.88,0.92,enhanced ABCD with PCA asymmetry border roughness diagnostic colors
+all_abcd_v2,0.9100,0.9128,0.9064,0.89,0.92,0.93,baseline features plus enhanced ABCD features
