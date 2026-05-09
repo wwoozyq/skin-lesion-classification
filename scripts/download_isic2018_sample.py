@@ -1,5 +1,4 @@
 import argparse
-import os
 import subprocess
 import time
 import urllib.error
@@ -58,15 +57,11 @@ def download_with_python(url, output_path):
 
 
 def download_with_curl(url, output_path):
-    env = os.environ.copy()
-    for key in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"]:
-        env.pop(key, None)
     result = subprocess.run(
-        ["curl", "-L", "--fail", "--noproxy", "*", url, "-o", str(output_path)],
+        ["curl", "-L", "--fail", url, "-o", str(output_path)],
         check=False,
         capture_output=True,
         text=True,
-        env=env,
     )
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or result.stdout.strip())
