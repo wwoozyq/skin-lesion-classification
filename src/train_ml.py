@@ -70,7 +70,19 @@ def main():
     parser.add_argument(
         "--feature_set",
         default="all",
-        choices=["all", "all_abcd", "all_abcd_v2", "color", "shape", "texture", "abcd", "abcd_v2"],
+        choices=[
+            "all",
+            "all_abcd",
+            "all_abcd_v2",
+            "all_boundary",
+            "all_abcd_v2_boundary",
+            "color",
+            "shape",
+            "texture",
+            "abcd",
+            "abcd_v2",
+            "boundary",
+        ],
     )
     args = parser.parse_args()
     train_ml(Path(args.data_dir), args.feature_set)

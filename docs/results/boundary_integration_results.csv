@@ -1,0 +1,5 @@
+method,accuracy,macro_f1,balanced_accuracy,mel_f1,nv_f1,vasc_f1,notes
+baseline_all,0.8917,0.8980,0.8908,0.86,0.90,0.93,baseline color shape texture
+all_abcd_v2,0.9100,0.9128,0.9064,0.89,0.92,0.93,baseline plus enhanced ABCD features
+all_boundary,0.9133,0.9167,0.9056,0.89,0.92,0.94,baseline plus enhanced boundary features
+all_abcd_v2_boundary,0.9150,0.9191,0.9052,0.90,0.92,0.94,baseline plus enhanced ABCD and boundary features
