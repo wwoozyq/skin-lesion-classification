@@ -1,14 +1,15 @@
 # Skin Lesion Classification
 
-生物医学图像处理 Project 2：皮肤病变图像三分类。
+Biomedical Image Processing Project 2: traditional image processing and machine
+learning for three-class skin lesion classification.
 
-任务是读取皮肤病变图像和对应 mask，预测每张图属于：
+Classes:
 
-- `mel`: melanoma，黑色素瘤
-- `nv`: melanocytic nevus，黑色素细胞痣
-- `vasc`: vascular lesion，血管性病变
+- `mel`: melanoma
+- `nv`: melanocytic nevus
+- `vasc`: vascular lesion
 
-最终需要生成 `output.csv`：
+The final prediction file is `output.csv`:
 
 ```csv
 image_id,dx
@@ -17,15 +18,55 @@ image_id,dx
 3,vasc
 ```
 
-## Project Goal
+## Current Status
 
-本项目不只做单一深度学习分类器，而是按三条线推进：
+The current main submission follows the course quantitative-evaluation rule:
+**traditional image processing + simple machine learning only**. Deep learning
+is implemented only as an optional extension for the report/presentation.
 
-1. 传统图像处理 + 机器学习：利用 mask 提取病灶区域，构造颜色、纹理、形状特征，并训练 SVM、Random Forest、XGBoost 等模型。
-2. 深度学习：使用预训练 ResNet18、MobileNetV2 或 EfficientNet-B0 微调三分类。
-3. 融合方法：结合传统特征、深度特征或模型预测概率，提高泛化能力。
+Best selected traditional model:
 
-第一周先集中完成机器学习路线，保证项目有稳定 baseline。
+```text
+feature_set = all_boundary
+classifier  = LogisticRegression(class_weight="balanced")
+selection   = SelectKBest(f_classif, k=100)
+validation  = StratifiedGroupKFold by original lesion id
+mask_mode   = raw
+```
+
+Strict grouped-CV result on seed `127`:
+
+| metric | score |
+|---|---:|
+| Accuracy | 0.7233 |
+| Macro-F1 | 0.7454 |
+| Balanced Accuracy | 0.7535 |
+
+Multi-seed grouped-CV stability over seeds `42, 127, 2024, 3407, 520`:
+
+| metric | score |
+|---|---:|
+| Mean Macro-F1 | 0.7242 |
+| Std Macro-F1 | 0.0143 |
+| Mean Balanced Accuracy | 0.7301 |
+
+## Why Grouped CV Matters
+
+The dataset contains original images and augmented versions, for example:
+
+```text
+100.jpg
+100_aug1.jpg
+100_aug2.jpg
+```
+
+Random image-level validation can leak information because an original lesion
+may appear in training while its augmented version appears in validation. Early
+image-level experiments reported around `0.91` macro-F1, but this was
+optimistic. The current protocol groups all augmentations of the same lesion by
+`base_id` and evaluates with `StratifiedGroupKFold`.
+
+This is the most important methodological correction in the project.
 
 ## Repository Structure
 
@@ -33,117 +74,185 @@ image_id,dx
 .
 ├── README.md
 ├── requirements.txt
+├── requirements-deep.txt
 ├── run.py
-├── data/
-│   └── README.md
 ├── docs/
-│   ├── TEAM_TASKS.md
-│   └── EXPERIMENT_PLAN.md
-├── src/
-│   ├── config.py
-│   ├── dataset.py
-│   ├── evaluate.py
-│   ├── features_color.py
-│   ├── features_shape.py
-│   ├── features_texture.py
-│   ├── features.py
-│   ├── train_ml.py
-│   └── utils.py
+│   ├── CURRENT_EXPERIMENT_PROGRESS.md
+│   ├── FULL_SCORE_EXPERIMENT_PLAN.md
+│   ├── PRESENTATION_HIGHLIGHTS.md
+│   ├── STRICT_GROUPED_RESULTS.md
+│   └── TEXTURE_OPTIMIZATION.md
+├── experiments/
+│   ├── analyze_robustness.py
+│   ├── run_ml_grid.py
+│   ├── run_stability.py
+│   ├── run_melnv_refinement.py
+│   ├── train_deep.py
+│   └── visualize_errors.py
 ├── scripts/
 │   └── check_dataset.py
-├── experiments/
-└── outputs/
-    ├── metrics/
-    ├── models/
-    └── figures/
+└── src/
+    ├── dataset.py
+    ├── evaluate.py
+    ├── features.py
+    ├── features_abcd.py
+    ├── features_boundary.py
+    ├── features_color.py
+    ├── features_contrast.py
+    ├── features_melnv.py
+    ├── features_shape.py
+    ├── features_texture.py
+    ├── preprocess.py
+    ├── train_ml.py
+    └── utils.py
 ```
 
 ## Data Placement
 
-不要把课程数据图片上传到 GitHub。请每个人在本地按下面结构放数据：
+Do not upload course images or masks to GitHub. Put the data locally as:
 
 ```text
 data/Data_Proj2/
   image/
-    1.jpg
-    2.jpg
-    ...
   mask/
-    mask_1.jpg
-    mask_2.jpg
-    ...
   label.csv
 ```
 
-`label.csv` 格式：
+For this local workspace, the data directory is symlinked from:
 
-```csv
-image_id,dx
-1,nv
-2,nv
-3,mel
+```text
+/Users/wlm/Downloads/Project/Data_Proj2
 ```
 
 ## Installation
 
-建议使用虚拟环境：
+This project is managed with `uv`.
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+python3 -m venv .venv
+uv pip install --python .venv/bin/python -r requirements.txt
+```
+
+Optional deep-learning extension:
+
+```bash
+uv pip install --python .venv/bin/python -r requirements-deep.txt
 ```
 
 ## Quick Start
 
-检查数据：
+Check the dataset:
 
 ```bash
-python scripts/check_dataset.py --data_dir data/Data_Proj2
+.venv/bin/python scripts/check_dataset.py --data_dir data/Data_Proj2
 ```
 
-训练机器学习 baseline：
+Train the selected traditional model:
 
 ```bash
-python -m src.train_ml --data_dir data/Data_Proj2 --feature_set all
+.venv/bin/python -m src.train_ml \
+  --data_dir data/Data_Proj2 \
+  --feature_set all_boundary \
+  --classifier lr \
+  --k_features 100 \
+  --cv grouped \
+  --mask_mode raw
 ```
 
-生成预测文件：
+Generate `output.csv`:
 
 ```bash
-python run.py --input_dir data/Data_Proj2 --output_csv output.csv
+.venv/bin/python run.py \
+  --input_dir data/Data_Proj2 \
+  --model_path outputs/models/ml_all_boundary_lr_grouped_raw_seed127.joblib \
+  --output_csv output.csv
 ```
 
-## Metrics
+## Main Experiments
 
-组内实验统一记录：
+Automated grid search:
 
-- Accuracy
-- Macro-F1
-- Balanced Accuracy
-- Confusion Matrix
-- Per-class Precision / Recall / F1
-
-由于本地数据类别不平衡，调参时优先看 `macro-F1` 和 `balanced accuracy`，不要只看 accuracy。
-
-## Team Workflow
-
-- `main` 分支只放稳定版本。
-- 每个人从自己的分支开发，例如：
-  - `feature/color`
-  - `feature/texture`
-  - `feature/shape`
-  - `model/ml`
-  - `docs/report`
-- 合并前先确认代码能在本地跑通。
-
-Commit message 建议：
-
-```text
-feat: add color features
-feat: add texture features
-fix: handle empty masks
-exp: add xgboost baseline
-docs: update task plan
+```bash
+.venv/bin/python experiments/run_ml_grid.py \
+  --data_dir data/Data_Proj2 \
+  --feature_sets all,all_contrast,all_abcd_v2,all_boundary,final \
+  --classifiers svm,rf,lr,knn \
+  --k_features all,60,100 \
+  --mask_modes raw \
+  --output_csv outputs/metrics/ml_grid_raw.csv
 ```
 
+Mask-cleaning ablation:
+
+```bash
+.venv/bin/python experiments/run_ml_grid.py \
+  --data_dir data/Data_Proj2 \
+  --feature_sets all,all_boundary,final \
+  --classifiers svm,lr \
+  --k_features all,60,100 \
+  --mask_modes clean \
+  --output_csv outputs/metrics/ml_grid_clean.csv
+```
+
+Robustness consistency:
+
+```bash
+.venv/bin/python experiments/analyze_robustness.py \
+  --prediction_csv outputs/metrics/ml_all_boundary_lr_grouped_raw_seed127_oof_predictions.csv \
+  --output_dir outputs/metrics/robustness_best
+```
+
+Error visualization:
+
+```bash
+.venv/bin/python experiments/visualize_errors.py \
+  --data_dir data/Data_Proj2 \
+  --prediction_csv outputs/metrics/ml_all_boundary_lr_grouped_raw_seed127_oof_predictions.csv \
+  --output_dir outputs/figures/errors_best \
+  --mask_mode raw
+```
+
+Multi-seed stability:
+
+```bash
+.venv/bin/python experiments/run_stability.py \
+  --data_dir data/Data_Proj2 \
+  --feature_sets all_boundary,all_boundary_melnv,final_melnv \
+  --classifiers lr,svm \
+  --k_features 80,100,160 \
+  --mask_modes raw \
+  --seeds 42,127,2024,3407,520 \
+  --output_csv outputs/metrics/stability_melnv.csv
+```
+
+Optional deep-learning smoke test:
+
+```bash
+.venv/bin/python experiments/train_deep.py \
+  --data_dir data/Data_Proj2 \
+  --crop \
+  --epochs 2 \
+  --output_dir outputs/deep/resnet18_smoke
+```
+
+## Worth Reporting
+
+The strongest presentation/report points are recorded in:
+
+- `docs/PRESENTATION_HIGHLIGHTS.md`
+- `docs/CURRENT_EXPERIMENT_PROGRESS.md`
+- `docs/STRICT_GROUPED_RESULTS.md`
+- `docs/FULL_SCORE_EXPERIMENT_PLAN.md`
+
+Key messages:
+
+1. We corrected augmentation leakage with grouped CV.
+2. The old 90%+ result was inflated; strict validation gives a more honest
+   70%+ result.
+3. Boundary features plus balanced Logistic Regression are the most stable
+   traditional solution.
+4. Most errors are between `mel` and `nv`, which matches the medical difficulty
+   of distinguishing pigmented lesions.
+5. Mask cleaning, mel/nv refinement, and deep learning were tested, but not
+   adopted as the main quantitative submission because they did not improve the
+   strict traditional evaluation.

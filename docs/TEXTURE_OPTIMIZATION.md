@@ -1,5 +1,10 @@
 # 纹理特征优化记录
 
+> 注意：本文件记录的是早期 image-level random split 阶段的纹理优化过程。
+> 其中 0.90+ 的结果有助于说明特征与分类器探索过程，但不能作为最终严格
+> 定量结果。最终报告应以 `STRICT_GROUPED_RESULTS.md` 和
+> `CURRENT_EXPERIMENT_PROGRESS.md` 中的 grouped CV 结果为准。
+
 ## 初始 Baseline
 
 运行原始代码（旧纹理 + Random Forest）：

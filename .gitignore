@@ -8,11 +8,18 @@ venv/
 data/Data_Proj2/
 data/Data_Proj2
 external_data/
+outputs/cache/
 outputs/models/*.pkl
 outputs/models/*.joblib
 outputs/models/*.pth
+outputs/models/*.pt
 outputs/metrics/*.csv
+outputs/metrics/*.txt
+outputs/metrics/*/
+outputs/figures/
 outputs/figures/*.png
+outputs/figures/*.jpg
+outputs/deep/
 output.csv
 
 # OS / editor

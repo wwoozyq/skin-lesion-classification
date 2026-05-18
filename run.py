@@ -18,8 +18,9 @@ def main():
     model = bundle["model"]
     feature_set = bundle["feature_set"]
     feature_columns = bundle["feature_columns"]
+    mask_mode = bundle.get("mask_mode", "raw")
 
-    features = build_feature_table(Path(args.input_dir), feature_set=feature_set)
+    features = build_feature_table(Path(args.input_dir), feature_set=feature_set, mask_mode=mask_mode)
     X = features[feature_columns]
     pred = model.predict(X)
 
@@ -33,4 +34,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
