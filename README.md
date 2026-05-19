@@ -79,6 +79,7 @@ This is the most important methodological correction in the project.
 ├── docs/
 │   ├── CURRENT_EXPERIMENT_PROGRESS.md
 │   ├── FULL_SCORE_EXPERIMENT_PLAN.md
+│   ├── KAGGLE_DEEP_LEARNING.md
 │   ├── PRESENTATION_HIGHLIGHTS.md
 │   ├── STRICT_GROUPED_RESULTS.md
 │   └── TEXTURE_OPTIMIZATION.md
@@ -230,10 +231,20 @@ Optional deep-learning smoke test:
 ```bash
 .venv/bin/python experiments/train_deep.py \
   --data_dir data/Data_Proj2 \
+  --model mobilenet_v2 \
+  --pretrained \
   --crop \
-  --epochs 2 \
-  --output_dir outputs/deep/resnet18_smoke
+  --cache_images \
+  --epochs 20 \
+  --freeze_backbone_epochs 4 \
+  --image_size 192 \
+  --batch_size 32 \
+  --monitor accuracy \
+  --output_dir outputs/deep/mobilenet_v2_pretrained_20ep
 ```
+
+For Kaggle GPU training instructions, see
+`docs/KAGGLE_DEEP_LEARNING.md`.
 
 ## Worth Reporting
 
@@ -243,6 +254,7 @@ The strongest presentation/report points are recorded in:
 - `docs/CURRENT_EXPERIMENT_PROGRESS.md`
 - `docs/STRICT_GROUPED_RESULTS.md`
 - `docs/FULL_SCORE_EXPERIMENT_PLAN.md`
+- `docs/KAGGLE_DEEP_LEARNING.md`
 
 Key messages:
 
