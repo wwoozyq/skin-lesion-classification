@@ -173,6 +173,21 @@ work. Deep learning should remain an extension in the presentation/report, not
 the main quantitative submission, because the course quantitative assessment
 requires traditional image processing or simple machine learning.
 
+Low-load CPU night-run script:
+
+```bash
+caffeinate -dimsu .venv/bin/python experiments/run_deep_lowload_night.py \
+  --data_dir data/Data_Proj2 \
+  --threads 2 \
+  --max_hours 8
+```
+
+This runner executes MobileNetV2-only experiments with `image_size=160`,
+`batch_size=8`, early stopping, and two CPU threads. It saves a full log to
+`outputs/deep/night_lowload_cpu_run.log` and writes morning-review summaries to
+`outputs/deep/night_lowload_summary.csv` and
+`outputs/deep/night_lowload_summary.md`.
+
 ## 6. Mel/NV Error-Driven Optimization
 
 Motivation:

@@ -240,21 +240,13 @@ Multi-seed stability:
   --output_csv outputs/metrics/stability_melnv.csv
 ```
 
-Optional deep-learning smoke test:
+Optional low-load CPU deep-learning night run:
 
 ```bash
-.venv/bin/python experiments/train_deep.py \
+caffeinate -dimsu .venv/bin/python experiments/run_deep_lowload_night.py \
   --data_dir data/Data_Proj2 \
-  --model mobilenet_v2 \
-  --pretrained \
-  --crop \
-  --cache_images \
-  --epochs 20 \
-  --freeze_backbone_epochs 4 \
-  --image_size 192 \
-  --batch_size 32 \
-  --monitor accuracy \
-  --output_dir outputs/deep/mobilenet_v2_pretrained_20ep
+  --threads 2 \
+  --max_hours 8
 ```
 
 For Kaggle GPU training instructions, see
