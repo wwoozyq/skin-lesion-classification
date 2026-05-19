@@ -57,7 +57,7 @@ def _maybe_reexec_with_caffeinate(args):
     os.execve(caffeinate, cmd, env)
 
 
-def _experiments(output_root):
+def _experiments(output_root, device):
     common = [
         "--model", "mobilenet_v2",
         "--pretrained",
@@ -69,6 +69,7 @@ def _experiments(output_root):
         "--freeze_backbone_epochs", "4",
         "--patience", "6",
         "--mask_mode", "clean",
+        "--device", device,
     ]
     return [
         {
@@ -221,6 +222,7 @@ def main():
     parser.add_argument("--data_dir", default="data/Data_Proj2")
     parser.add_argument("--output_root", default=str(DEFAULT_OUTPUT_ROOT))
     parser.add_argument("--threads", type=int, default=2)
+    parser.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"])
     parser.add_argument("--target_accuracy", type=float, default=0.65)
     parser.add_argument("--max_hours", type=float, default=8.0)
     parser.add_argument("--caffeinate", action="store_true")
@@ -230,9 +232,12 @@ def main():
     _maybe_reexec_with_caffeinate(args)
 
     output_root = Path(args.output_root)
-    experiments = _experiments(output_root)
+    experiments = _experiments(output_root, args.device)
     if args.dry_run:
-        print(f"threads={args.threads} target_accuracy={args.target_accuracy:.2f} max_hours={args.max_hours:g}")
+        print(
+            f"threads={args.threads} device={args.device} "
+            f"target_accuracy={args.target_accuracy:.2f} max_hours={args.max_hours:g}"
+        )
         for experiment in experiments:
             cmd = [str(PYTHON), "experiments/train_deep.py", "--data_dir", args.data_dir, *experiment["args"]]
             print(f"\n# {experiment['run_name']}")
@@ -246,7 +251,10 @@ def main():
     env = _thread_limited_env(args.threads)
 
     print(f"low-load deep night run started at {datetime.now().isoformat(timespec='seconds')}")
-    print(f"threads={args.threads} target_accuracy={args.target_accuracy:.2f} max_hours={args.max_hours:g}")
+    print(
+        f"threads={args.threads} device={args.device} "
+        f"target_accuracy={args.target_accuracy:.2f} max_hours={args.max_hours:g}"
+    )
     print(f"log={log_path}")
 
     start_time = time.monotonic()
@@ -254,7 +262,10 @@ def main():
     with log_path.open("a") as log_handle:
         log_handle.write("\n\n")
         log_handle.write(f"low-load deep night run started_at={datetime.now().isoformat(timespec='seconds')}\n")
-        log_handle.write(f"threads={args.threads} target_accuracy={args.target_accuracy:.2f} max_hours={args.max_hours:g}\n")
+        log_handle.write(
+            f"threads={args.threads} device={args.device} "
+            f"target_accuracy={args.target_accuracy:.2f} max_hours={args.max_hours:g}\n"
+        )
         stop_after_light_control = False
         index = 0
         while index < len(experiments):
