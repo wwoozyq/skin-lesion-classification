@@ -84,29 +84,29 @@ Command:
 
 ```bash
 .venv/bin/python experiments/analyze_robustness.py \
-  --prediction_csv outputs/metrics/ml_all_boundary_lr_grouped_raw_seed127_oof_predictions.csv \
-  --output_dir outputs/metrics/robustness_best
+  --prediction_csv outputs/metrics/ml_all_abcd_grouped_lr03_grouped_raw_seed127_oof_predictions.csv \
+  --output_dir outputs/metrics/robustness_abcd_grouped
 ```
 
 Image-level robustness:
 
 | image type | n images | accuracy |
 |---|---:|---:|
-| original | 200 | 0.7500 |
-| augmented | 400 | 0.7100 |
+| original | 200 | 0.7800 |
+| augmented | 400 | 0.7500 |
 
 Group-level robustness:
 
 | n groups | prediction consistency | all images correct | any image correct | all match original |
 |---:|---:|---:|---:|---:|
-| 200 | 0.6800 | 0.5650 | 0.8750 | 0.6800 |
+| 200 | 0.7350 | 0.6300 | 0.8750 | 0.7350 |
 
 Interpretation:
 
-The model is reasonably robust to augmentation, but there is still a clear gap
-between original images and augmented images. This is a strong discussion point
-for the report: grouped CV gives an honest estimate, while consistency analysis
-shows the remaining robustness limitation.
+The new ABCD grouped model improves both original-image and augmented-image
+accuracy. The original/augmented gap remains, but prediction consistency
+improves from 0.6800 to 0.7350, making this a stronger robustness story than
+the previous candidate model.
 
 ## 4. Error Example Visualization
 
@@ -115,8 +115,8 @@ Command:
 ```bash
 .venv/bin/python experiments/visualize_errors.py \
   --data_dir data/Data_Proj2 \
-  --prediction_csv outputs/metrics/ml_all_boundary_lr_grouped_raw_seed127_oof_predictions.csv \
-  --output_dir outputs/figures/errors_best \
+  --prediction_csv outputs/metrics/ml_all_abcd_grouped_lr03_grouped_raw_seed127_oof_predictions.csv \
+  --output_dir outputs/figures/errors_abcd_grouped \
   --mask_mode raw \
   --max_per_pair 6
 ```
@@ -125,18 +125,20 @@ Error distribution:
 
 | true label | predicted label | n errors | figure |
 |---|---|---:|---|
-| nv | mel | 84 | `outputs/figures/errors_best/errors_true_nv_pred_mel.png` |
-| mel | nv | 51 | `outputs/figures/errors_best/errors_true_mel_pred_nv.png` |
-| nv | vasc | 14 | `outputs/figures/errors_best/errors_true_nv_pred_vasc.png` |
-| vasc | nv | 13 | `outputs/figures/errors_best/errors_true_vasc_pred_nv.png` |
-| mel | vasc | 3 | `outputs/figures/errors_best/errors_true_mel_pred_vasc.png` |
-| vasc | mel | 1 | `outputs/figures/errors_best/errors_true_vasc_pred_mel.png` |
+| nv | mel | 59 | `outputs/figures/errors_abcd_grouped/errors_true_nv_pred_mel.png` |
+| mel | nv | 53 | `outputs/figures/errors_abcd_grouped/errors_true_mel_pred_nv.png` |
+| nv | vasc | 14 | `outputs/figures/errors_abcd_grouped/errors_true_nv_pred_vasc.png` |
+| mel | vasc | 9 | `outputs/figures/errors_abcd_grouped/errors_true_mel_pred_vasc.png` |
+| vasc | nv | 6 | `outputs/figures/errors_abcd_grouped/errors_true_vasc_pred_nv.png` |
+| vasc | mel | 3 | `outputs/figures/errors_abcd_grouped/errors_true_vasc_pred_mel.png` |
 
 Main observation:
 
-Most errors are between `nv` and `mel`, which is expected because both can be
-pigmented lesions with overlapping color and boundary patterns. The `vasc`
-class is easier because vascular lesions often show stronger color contrast.
+Most remaining errors are still between `nv` and `mel`, which is expected
+because both can be pigmented lesions with overlapping color and boundary
+patterns. The new ABCD grouped features substantially reduce `nv -> mel`
+errors from 84 to 59, but introduce a small increase in `mel -> vasc` and
+`vasc -> mel` mistakes.
 
 ## 5. Deep Learning Extension
 
@@ -260,9 +262,9 @@ Best stability results:
 
 Conclusion:
 
-The original best model remains the most stable candidate. The seed-127 score
-of 0.7454 is a strong fold split, while the more honest multi-seed expectation
-is around 0.72-0.73 macro-F1.
+Before the ABCD grouped branch integration, the `all_boundary` LR model was the
+most stable candidate. Its seed-127 score of 0.7454 was a strong fold split,
+while the more honest multi-seed expectation was around 0.72-0.73 macro-F1.
 
 ### 6.3 Two-Stage Mel/NV Refinement
 
@@ -301,6 +303,46 @@ Two-stage refinement should not be adopted. It is useful as an experiment, but
 it does not consistently improve the main model and often over-corrects mel/nv
 predictions.
 
+## 7. ABCD Grouped Branch Integration
+
+After inspecting `origin/abcd-grouped-optimization`, we did not merge the branch
+directly because it committed generated `outputs/` files and rewrote core
+training code. Instead, we selectively integrated its useful ideas as an
+independent feature module and experiment.
+
+New files / interfaces:
+
+```text
+src/features_abcd_grouped.py
+experiments/run_abcd_grouped_integration.py
+feature sets: abcd_grouped, all_abcd_grouped, final_abcd_grouped
+classifier: lr03 = LogisticRegression(C=0.3)
+```
+
+Best seed-127 strict grouped-CV result:
+
+| model | accuracy | macro-F1 | balanced accuracy |
+|---|---:|---:|---:|
+| previous `all_boundary` + LR + top100 | 0.7233 | 0.7454 | 0.7535 |
+| new `all_abcd_grouped` + `lr03` + top140 | **0.7600** | **0.7715** | **0.7871** |
+| threshold ablation, `mel_threshold=0.45` | 0.7600 | 0.7730 | 0.7910 |
+
+Five-seed stability:
+
+| model | mean accuracy | mean macro-F1 | std macro-F1 | mean balanced accuracy |
+|---|---:|---:|---:|---:|
+| previous `all_boundary` + LR + top100 | 0.7077 | 0.7242 | 0.0143 | 0.7301 |
+| new `all_abcd_grouped` + `lr03` + top140 | **0.7283** | **0.7435** | 0.0271 | **0.7512** |
+| threshold ablation, `mel_threshold=0.45` | 0.7257 | 0.7426 | 0.0284 | 0.7520 |
+
+Conclusion:
+
+The selectively integrated ABCD grouped features are currently the strongest
+traditional-method candidate. The no-threshold model is preferred for the main
+report because it has cleaner decision logic and slightly better multi-seed
+mean macro-F1. The threshold version can be presented as an error-driven
+ablation.
+
 ## Final Prediction File
 
 Generated with:
@@ -308,7 +350,7 @@ Generated with:
 ```bash
 .venv/bin/python run.py \
   --input_dir data/Data_Proj2 \
-  --model_path outputs/models/ml_all_boundary_lr_grouped_raw_seed127.joblib \
+  --model_path outputs/models/ml_all_abcd_grouped_lr03_grouped_raw_seed127.joblib \
   --output_csv output.csv
 ```
 

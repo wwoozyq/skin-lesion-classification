@@ -27,9 +27,9 @@ is implemented only as an optional extension for the report/presentation.
 Best selected traditional model:
 
 ```text
-feature_set = all_boundary
-classifier  = LogisticRegression(class_weight="balanced")
-selection   = SelectKBest(f_classif, k=100)
+feature_set = all_abcd_grouped
+classifier  = LogisticRegression(C=0.3, class_weight="balanced")
+selection   = SelectKBest(f_classif, k=140)
 validation  = StratifiedGroupKFold by original lesion id
 mask_mode   = raw
 ```
@@ -38,17 +38,17 @@ Strict grouped-CV result on seed `127`:
 
 | metric | score |
 |---|---:|
-| Accuracy | 0.7233 |
-| Macro-F1 | 0.7454 |
-| Balanced Accuracy | 0.7535 |
+| Accuracy | 0.7600 |
+| Macro-F1 | 0.7715 |
+| Balanced Accuracy | 0.7871 |
 
 Multi-seed grouped-CV stability over seeds `42, 127, 2024, 3407, 520`:
 
 | metric | score |
 |---|---:|
-| Mean Macro-F1 | 0.7242 |
-| Std Macro-F1 | 0.0143 |
-| Mean Balanced Accuracy | 0.7301 |
+| Mean Macro-F1 | 0.7435 |
+| Std Macro-F1 | 0.0271 |
+| Mean Balanced Accuracy | 0.7512 |
 
 ## Why Grouped CV Matters
 
@@ -80,6 +80,7 @@ This is the most important methodological correction in the project.
 │   ├── CURRENT_EXPERIMENT_PROGRESS.md
 │   ├── FULL_SCORE_EXPERIMENT_PLAN.md
 │   ├── KAGGLE_DEEP_LEARNING.md
+│   ├── ABCD_GROUPED_INTEGRATION.md
 │   ├── PRESENTATION_HIGHLIGHTS.md
 │   ├── STRICT_GROUPED_RESULTS.md
 │   ├── TEAM_PROGRESS_OVERVIEW.md
@@ -98,6 +99,7 @@ This is the most important methodological correction in the project.
     ├── evaluate.py
     ├── features.py
     ├── features_abcd.py
+    ├── features_abcd_grouped.py
     ├── features_boundary.py
     ├── features_color.py
     ├── features_contrast.py
@@ -154,9 +156,9 @@ Train the selected traditional model:
 ```bash
 .venv/bin/python -m src.train_ml \
   --data_dir data/Data_Proj2 \
-  --feature_set all_boundary \
-  --classifier lr \
-  --k_features 100 \
+  --feature_set all_abcd_grouped \
+  --classifier lr03 \
+  --k_features 140 \
   --cv grouped \
   --mask_mode raw
 ```
@@ -166,7 +168,7 @@ Generate `output.csv`:
 ```bash
 .venv/bin/python run.py \
   --input_dir data/Data_Proj2 \
-  --model_path outputs/models/ml_all_boundary_lr_grouped_raw_seed127.joblib \
+  --model_path outputs/models/ml_all_abcd_grouped_lr03_grouped_raw_seed127.joblib \
   --output_csv output.csv
 ```
 
@@ -182,6 +184,17 @@ Automated grid search:
   --k_features all,60,100 \
   --mask_modes raw \
   --output_csv outputs/metrics/ml_grid_raw.csv
+```
+
+ABCD grouped integration experiment:
+
+```bash
+.venv/bin/python experiments/run_abcd_grouped_integration.py \
+  --data_dir data/Data_Proj2 \
+  --feature_sets all_boundary,all_abcd_grouped,final_abcd_grouped \
+  --classifiers lr,rf \
+  --k_features 80,100,140 \
+  --output_csv outputs/metrics/abcd_grouped_integration_lr_rf.csv
 ```
 
 Mask-cleaning ablation:
@@ -264,7 +277,8 @@ Key messages:
 2. The old 90%+ result was inflated; strict validation gives a more honest
    70%+ result.
 3. Boundary features plus balanced Logistic Regression are the most stable
-   traditional solution.
+   traditional baseline; the selectively integrated ABCD grouped features give
+   the strongest current traditional score.
 4. Most errors are between `mel` and `nv`, which matches the medical difficulty
    of distinguishing pigmented lesions.
 5. Mask cleaning, mel/nv refinement, and deep learning were tested, but not

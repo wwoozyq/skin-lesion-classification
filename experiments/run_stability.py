@@ -1,7 +1,9 @@
 import argparse
 import sys
+import warnings
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectKBest, f_classif
@@ -20,6 +22,9 @@ from src.dataset import load_labels
 from src.evaluate import compute_metrics
 from src.features import build_feature_table
 from src.utils import base_id_from_image_id, ensure_dir
+
+
+warnings.filterwarnings("ignore", category=RuntimeWarning, module=r"sklearn\.")
 
 
 def _parse_list(value):
@@ -47,6 +52,8 @@ def _classifier(name):
         return SVC(kernel="rbf", C=100, gamma="scale", class_weight="balanced", random_state=42)
     if name == "lr":
         return LogisticRegression(C=1.0, max_iter=3000, class_weight="balanced", random_state=42)
+    if name == "lr03":
+        return LogisticRegression(C=0.3, max_iter=3000, class_weight="balanced", random_state=42)
     if name == "rf":
         return RandomForestClassifier(
             n_estimators=300,
@@ -71,7 +78,15 @@ def _pipeline(classifier_name, k_features, n_features):
     return Pipeline(steps)
 
 
-def _evaluate_seed(X, y, image_ids, classifier_name, k_features, n_splits, seed):
+def _predict_with_mel_threshold(probabilities, class_labels, mel_threshold):
+    class_labels = np.asarray(class_labels)
+    mel_idx = int(np.where(class_labels == "mel")[0][0])
+    non_mel_indices = np.asarray([idx for idx, label in enumerate(class_labels) if label != "mel"])
+    non_mel_best = class_labels[non_mel_indices[np.argmax(probabilities[:, non_mel_indices], axis=1)]]
+    return np.where(probabilities[:, mel_idx] >= mel_threshold, "mel", non_mel_best)
+
+
+def _evaluate_seed(X, y, image_ids, classifier_name, k_features, n_splits, seed, mel_threshold=None):
     groups = image_ids.map(base_id_from_image_id)
     cv = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=seed)
     pred = pd.Series(index=y.index, dtype=object)
@@ -79,7 +94,15 @@ def _evaluate_seed(X, y, image_ids, classifier_name, k_features, n_splits, seed)
     for train_idx, valid_idx in cv.split(X, y, groups=groups):
         model = _pipeline(classifier_name, k_features, X.shape[1])
         model.fit(X.iloc[train_idx], y.iloc[train_idx])
-        pred.iloc[valid_idx] = model.predict(X.iloc[valid_idx])
+        if mel_threshold is None:
+            pred.iloc[valid_idx] = model.predict(X.iloc[valid_idx])
+        else:
+            probabilities = model.predict_proba(X.iloc[valid_idx])
+            pred.iloc[valid_idx] = _predict_with_mel_threshold(
+                probabilities,
+                model.classes_,
+                mel_threshold,
+            )
 
     return compute_metrics(y, pred, labels=LABELS)
 
@@ -94,6 +117,7 @@ def run_stability(
     output_csv,
     n_splits=5,
     use_cache=True,
+    mel_threshold=None,
 ):
     labels = load_labels(data_dir)
     if labels is None:
@@ -121,6 +145,7 @@ def run_stability(
                             k_features=k_value,
                             n_splits=n_splits,
                             seed=int(seed),
+                            mel_threshold=mel_threshold,
                         )
                         row = {
                             "feature_set": feature_set,
@@ -129,6 +154,7 @@ def run_stability(
                             "k_features": k_value,
                             "n_features": X.shape[1],
                             "seed": int(seed),
+                            "mel_threshold": mel_threshold if mel_threshold is not None else "",
                             "accuracy": metrics["accuracy"],
                             "macro_f1": metrics["macro_f1"],
                             "balanced_accuracy": metrics["balanced_accuracy"],
@@ -146,7 +172,7 @@ def run_stability(
 
     summary = (
         result
-        .groupby(["feature_set", "mask_mode", "classifier", "k_features", "n_features"])
+        .groupby(["feature_set", "mask_mode", "classifier", "k_features", "n_features", "mel_threshold"])
         .agg(
             accuracy_mean=("accuracy", "mean"),
             accuracy_std=("accuracy", "std"),
@@ -173,6 +199,7 @@ def main():
     parser.add_argument("--seeds", default="42,127,2024,3407,520")
     parser.add_argument("--output_csv", default="outputs/metrics/stability.csv")
     parser.add_argument("--n_splits", type=int, default=5)
+    parser.add_argument("--mel_threshold", type=float, default=None)
     parser.add_argument("--no_cache", action="store_true")
     args = parser.parse_args()
 
@@ -186,6 +213,7 @@ def main():
         output_csv=Path(args.output_csv),
         n_splits=args.n_splits,
         use_cache=not args.no_cache,
+        mel_threshold=args.mel_threshold,
     )
     print("\nStability summary:")
     print(summary.to_string(index=False))

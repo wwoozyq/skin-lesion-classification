@@ -1,7 +1,9 @@
 import argparse
+import warnings
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectKBest, f_classif
@@ -19,10 +21,13 @@ from .features import build_feature_table
 from .utils import base_id_from_image_id, ensure_dir
 
 
+warnings.filterwarnings("ignore", category=RuntimeWarning, module=r"sklearn\.")
+
 CLASSIFIERS = {
     "svm": SVC(kernel="rbf", C=100, class_weight="balanced", random_state=42),
     "rf": RandomForestClassifier(n_estimators=300, max_depth=15, class_weight="balanced", random_state=42, n_jobs=-1),
     "lr": LogisticRegression(C=1, max_iter=1000, class_weight="balanced", random_state=42),
+    "lr03": LogisticRegression(C=0.3, max_iter=2000, class_weight="balanced", random_state=42),
     "knn": KNeighborsClassifier(n_neighbors=7, weights="distance"),
 }
 
@@ -41,9 +46,22 @@ FEATURE_SETS = [
     "all_melnv",
     "all_boundary_melnv",
     "all_abcd_v2_boundary",
+    "abcd_grouped",
+    "all_abcd_grouped",
     "final",
     "final_melnv",
+    "final_abcd_grouped",
 ]
+
+
+def _predict_with_mel_threshold(probabilities, class_labels, mel_threshold):
+    class_labels = np.asarray(class_labels)
+    if "mel" not in class_labels:
+        raise ValueError("Cannot apply mel threshold: class labels do not contain 'mel'.")
+    mel_idx = int(np.where(class_labels == "mel")[0][0])
+    non_mel_indices = np.asarray([idx for idx, label in enumerate(class_labels) if label != "mel"])
+    non_mel_best = class_labels[non_mel_indices[np.argmax(probabilities[:, non_mel_indices], axis=1)]]
+    return np.where(probabilities[:, mel_idx] >= mel_threshold, "mel", non_mel_best)
 
 
 def _make_cv_splits(X, y, image_ids, cv_method, n_splits, random_state):
@@ -91,6 +109,7 @@ def train_ml(
     n_splits=5,
     random_state=127,
     mask_mode="raw",
+    mel_threshold=None,
 ):
     labels = load_labels(data_dir)
     if labels is None:
@@ -122,7 +141,13 @@ def train_ml(
         n_splits=n_splits,
         random_state=random_state,
     )
-    pred = cross_val_predict(model, X, y, cv=splits)
+    if mel_threshold is None:
+        pred = cross_val_predict(model, X, y, cv=splits)
+    else:
+        if not hasattr(model, "predict_proba"):
+            raise ValueError("mel_threshold requires a classifier with predict_proba.")
+        probabilities = cross_val_predict(model, X, y, cv=splits, method="predict_proba")
+        pred = _predict_with_mel_threshold(probabilities, LABELS, mel_threshold)
     metrics = compute_metrics(y, pred, labels=LABELS)
 
     print("CV:", cv_method)
@@ -134,7 +159,8 @@ def train_ml(
     model.fit(X, y)
     ensure_dir(DEFAULT_MODEL_DIR)
     ensure_dir(DEFAULT_METRICS_DIR)
-    run_name = f"ml_{feature_set}_{classifier}_{cv_method}_{mask_mode}_seed{random_state}"
+    threshold_suffix = "" if mel_threshold is None else f"_melthr{str(mel_threshold).replace('.', '')}"
+    run_name = f"ml_{feature_set}_{classifier}_{cv_method}_{mask_mode}_seed{random_state}{threshold_suffix}"
     model_path = DEFAULT_MODEL_DIR / f"{run_name}.joblib"
     model_bundle = {
         "model": model,
@@ -144,6 +170,8 @@ def train_ml(
         "cv_method": cv_method,
         "classifier": classifier,
     }
+    if mel_threshold is not None:
+        model_bundle["mel_threshold"] = mel_threshold
     joblib.dump(model_bundle, model_path)
     joblib.dump(model_bundle, DEFAULT_MODEL_DIR / "ml_baseline.joblib")
 
@@ -155,6 +183,7 @@ def train_ml(
         "random_state": random_state,
         "k_features": k_features,
         "mask_mode": mask_mode,
+        "mel_threshold": mel_threshold if mel_threshold is not None else "",
         "accuracy": metrics["accuracy"],
         "macro_f1": metrics["macro_f1"],
         "balanced_accuracy": metrics["balanced_accuracy"],
@@ -197,6 +226,8 @@ def main():
     parser.add_argument("--n_splits", type=int, default=5)
     parser.add_argument("--random_state", type=int, default=127)
     parser.add_argument("--mask_mode", default="raw", choices=["raw", "clean"])
+    parser.add_argument("--mel_threshold", type=float, default=None,
+                        help="Optional decision threshold for the mel class. Use only with predict_proba classifiers.")
     args = parser.parse_args()
     train_ml(
         Path(args.data_dir),
@@ -207,6 +238,7 @@ def main():
         args.n_splits,
         args.random_state,
         args.mask_mode,
+        args.mel_threshold,
     )
 
 
