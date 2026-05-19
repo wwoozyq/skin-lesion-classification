@@ -82,6 +82,7 @@ This is the most important methodological correction in the project.
 │   ├── KAGGLE_DEEP_LEARNING.md
 │   ├── PRESENTATION_HIGHLIGHTS.md
 │   ├── STRICT_GROUPED_RESULTS.md
+│   ├── TEAM_PROGRESS_OVERVIEW.md
 │   └── TEXTURE_OPTIMIZATION.md
 ├── experiments/
 │   ├── analyze_robustness.py
@@ -251,6 +252,7 @@ For Kaggle GPU training instructions, see
 The strongest presentation/report points are recorded in:
 
 - `docs/PRESENTATION_HIGHLIGHTS.md`
+- `docs/TEAM_PROGRESS_OVERVIEW.md`
 - `docs/CURRENT_EXPERIMENT_PROGRESS.md`
 - `docs/STRICT_GROUPED_RESULTS.md`
 - `docs/FULL_SCORE_EXPERIMENT_PLAN.md`
