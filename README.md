@@ -240,11 +240,12 @@ Multi-seed stability:
   --output_csv outputs/metrics/stability_melnv.csv
 ```
 
-Optional low-load CPU deep-learning night run:
+Optional low-load deep-learning night run:
 
 ```bash
 caffeinate -dimsu .venv/bin/python experiments/run_deep_lowload_night.py \
   --data_dir data/Data_Proj2 \
+  --device auto \
   --threads 2 \
   --max_hours 8
 ```

@@ -173,18 +173,21 @@ work. Deep learning should remain an extension in the presentation/report, not
 the main quantitative submission, because the course quantitative assessment
 requires traditional image processing or simple machine learning.
 
-Low-load CPU night-run script:
+Low-load deep-learning night-run script:
 
 ```bash
 caffeinate -dimsu .venv/bin/python experiments/run_deep_lowload_night.py \
   --data_dir data/Data_Proj2 \
+  --device auto \
   --threads 2 \
   --max_hours 8
 ```
 
 This runner executes MobileNetV2-only experiments with `image_size=160`,
-`batch_size=8`, early stopping, and two CPU threads. It saves a full log to
-`outputs/deep/night_lowload_cpu_run.log` and writes morning-review summaries to
+`batch_size=8`, early stopping, `--device auto`, and two CPU data-loading /
+threading limits. On Apple Silicon it can use MPS automatically; pass
+`--device cpu` only when a pure CPU comparison is needed. It saves a full log to
+`outputs/deep/night_lowload_deep_run.log` and writes morning-review summaries to
 `outputs/deep/night_lowload_summary.csv` and
 `outputs/deep/night_lowload_summary.md`.
 

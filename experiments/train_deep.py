@@ -163,7 +163,17 @@ def _make_optimizer(model, lr, weight_decay):
     return torch.optim.AdamW(params, lr=lr, weight_decay=weight_decay)
 
 
-def _device():
+def _device(preferred="auto"):
+    if preferred == "cpu":
+        return torch.device("cpu")
+    if preferred == "mps":
+        if torch.backends.mps.is_available():
+            return torch.device("mps")
+        raise RuntimeError("Requested device=mps, but MPS is not available.")
+    if preferred == "cuda":
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        raise RuntimeError("Requested device=cuda, but CUDA is not available.")
     if torch.backends.mps.is_available():
         return torch.device("mps")
     if torch.cuda.is_available():
@@ -257,7 +267,7 @@ def train_deep(args):
     )
     valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
 
-    device = _device()
+    device = _device(args.device)
     model = _model(args.model, pretrained=args.pretrained).to(device)
 
     if args.freeze_backbone_epochs > 0:
@@ -351,6 +361,7 @@ def train_deep(args):
             "macro_f1": best_metrics["macro_f1"],
             "balanced_accuracy": best_metrics["balanced_accuracy"],
             "random_state": args.random_state,
+            "device": str(device),
             "image_size": args.image_size,
             "crop": args.crop,
             "crop_pad": args.crop_pad,
@@ -382,6 +393,7 @@ def main():
     parser.add_argument("--crop_pad", type=float, default=0.25)
     parser.add_argument("--augment_strength", default="standard", choices=["light", "standard"])
     parser.add_argument("--monitor", default="accuracy", choices=["accuracy", "macro_f1", "balanced_accuracy"])
+    parser.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"])
     parser.add_argument("--num_workers", type=int, default=0)
     parser.add_argument("--crop", action="store_true")
     parser.add_argument("--pretrained", action="store_true")
