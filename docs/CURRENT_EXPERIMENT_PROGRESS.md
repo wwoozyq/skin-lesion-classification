@@ -191,6 +191,10 @@ threading limits. On Apple Silicon it can use MPS automatically; pass
 `outputs/deep/night_lowload_summary.csv` and
 `outputs/deep/night_lowload_summary.md`.
 
+The `0.65` accuracy line is treated only as a minimum reference baseline. The
+runner does not stop after reaching it; once the deep model is clearly above
+that level, the goal becomes finding the strongest accuracy/macro-F1 variant.
+
 ## 6. Mel/NV Error-Driven Optimization
 
 Motivation:

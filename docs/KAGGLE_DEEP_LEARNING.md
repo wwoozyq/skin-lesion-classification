@@ -102,11 +102,16 @@ Start with MobileNetV2. It is faster and usually more stable on small datasets.
   --output_dir outputs/deep/mobilenet_v2_pretrained_20ep
 ```
 
-Expected target:
+Minimum reference baseline:
 
 ```text
 validation accuracy >= 0.65
 ```
+
+This is only the lower bound for a reportable extension. If the validation
+accuracy is already well above `0.65`, keep the best run and continue comparing
+reasonable variants; the goal becomes the highest validation accuracy and
+macro-F1, not merely passing `0.65`.
 
 Local 1-epoch probe with pretrained MobileNetV2 already reached:
 

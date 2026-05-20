@@ -250,6 +250,9 @@ caffeinate -dimsu .venv/bin/python experiments/run_deep_lowload_night.py \
   --max_hours 8
 ```
 
+The `0.65` accuracy line is only a minimum reference baseline; the runner keeps
+comparing variants and reports the best validation accuracy/macro-F1 it finds.
+
 For Kaggle GPU training instructions, see
 `docs/KAGGLE_DEEP_LEARNING.md`.
 

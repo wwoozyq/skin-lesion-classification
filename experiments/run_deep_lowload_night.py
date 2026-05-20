@@ -112,7 +112,7 @@ def _read_metrics(output_dir):
     return rows[0] if rows else {}
 
 
-def _write_summary(rows, summary_csv, summary_md, target_accuracy):
+def _write_summary(rows, summary_csv, summary_md, reference_accuracy):
     summary_csv.parent.mkdir(parents=True, exist_ok=True)
     with summary_csv.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=SUMMARY_COLUMNS)
@@ -128,7 +128,9 @@ def _write_summary(rows, summary_csv, summary_md, target_accuracy):
     lines = [
         "# Low-Load Deep Learning Night Run",
         "",
-        f"Target validation accuracy: `{target_accuracy:.2f}`",
+        f"Reference validation accuracy baseline: `{reference_accuracy:.2f}`",
+        "",
+        "The reference baseline is only a minimum reportable line; runs continue to seek the best score.",
         "",
         "| run | status | accuracy | macro-F1 | balanced accuracy | elapsed min |",
         "|---|---|---:|---:|---:|---:|",
@@ -146,9 +148,9 @@ def _write_summary(rows, summary_csv, summary_md, target_accuracy):
         )
     lines.append("")
     if best_acc:
-        reached = float(best_acc.get("accuracy") or 0.0) >= target_accuracy
+        reached = float(best_acc.get("accuracy") or 0.0) >= reference_accuracy
         lines.append(
-            "Best accuracy run: `{}` with accuracy `{}`. Target reached: `{}`.".format(
+            "Best accuracy run: `{}` with accuracy `{}`. Above reference baseline: `{}`.".format(
                 best_acc.get("run_name", ""),
                 _fmt(best_acc.get("accuracy")),
                 reached,
@@ -223,7 +225,14 @@ def main():
     parser.add_argument("--output_root", default=str(DEFAULT_OUTPUT_ROOT))
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"])
-    parser.add_argument("--target_accuracy", type=float, default=0.65)
+    parser.add_argument(
+        "--reference_accuracy",
+        "--target_accuracy",
+        dest="reference_accuracy",
+        type=float,
+        default=0.65,
+        help="Minimum reportable baseline only. This does not stop later experiments.",
+    )
     parser.add_argument("--max_hours", type=float, default=8.0)
     parser.add_argument("--caffeinate", action="store_true")
     parser.add_argument("--dry_run", action="store_true")
@@ -236,7 +245,7 @@ def main():
     if args.dry_run:
         print(
             f"threads={args.threads} device={args.device} "
-            f"target_accuracy={args.target_accuracy:.2f} max_hours={args.max_hours:g}"
+            f"reference_accuracy={args.reference_accuracy:.2f} max_hours={args.max_hours:g}"
         )
         for experiment in experiments:
             cmd = [str(PYTHON), "experiments/train_deep.py", "--data_dir", args.data_dir, *experiment["args"]]
@@ -253,7 +262,7 @@ def main():
     print(f"low-load deep night run started at {datetime.now().isoformat(timespec='seconds')}")
     print(
         f"threads={args.threads} device={args.device} "
-        f"target_accuracy={args.target_accuracy:.2f} max_hours={args.max_hours:g}"
+        f"reference_accuracy={args.reference_accuracy:.2f} max_hours={args.max_hours:g}"
     )
     print(f"log={log_path}")
 
@@ -264,9 +273,8 @@ def main():
         log_handle.write(f"low-load deep night run started_at={datetime.now().isoformat(timespec='seconds')}\n")
         log_handle.write(
             f"threads={args.threads} device={args.device} "
-            f"target_accuracy={args.target_accuracy:.2f} max_hours={args.max_hours:g}\n"
+            f"reference_accuracy={args.reference_accuracy:.2f} max_hours={args.max_hours:g}\n"
         )
-        stop_after_light_control = False
         index = 0
         while index < len(experiments):
             experiment = experiments[index]
@@ -278,30 +286,13 @@ def main():
                 })
                 index += 1
                 continue
-            if index == 2 and stop_after_light_control:
-                rows.append({
-                    "run_name": experiment["run_name"],
-                    "status": "skipped_primary_reached_target",
-                    "output_dir": experiment["args"][experiment["args"].index("--output_dir") + 1],
-                })
-                index += 1
-                continue
 
             row = _run_one(experiment, args, env, log_handle)
             rows.append(row)
-            _write_summary(rows, summary_csv, summary_md, args.target_accuracy)
-
-            if index == 0 and row.get("status") == "completed":
-                first_accuracy = float(row.get("accuracy") or 0.0)
-                if first_accuracy >= args.target_accuracy:
-                    log_handle.write(
-                        f"primary run reached target accuracy {first_accuracy:.4f}; "
-                        "will run only the light-augmentation control and stop before macro-F1 control.\n"
-                    )
-                    stop_after_light_control = True
+            _write_summary(rows, summary_csv, summary_md, args.reference_accuracy)
             index += 1
 
-        _write_summary(rows, summary_csv, summary_md, args.target_accuracy)
+        _write_summary(rows, summary_csv, summary_md, args.reference_accuracy)
         log_handle.write(f"low-load deep night run finished_at={datetime.now().isoformat(timespec='seconds')}\n")
 
     print(f"summary_csv={summary_csv}")
