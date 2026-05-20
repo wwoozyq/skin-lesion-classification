@@ -80,6 +80,7 @@ This is the most important methodological correction in the project.
 │   ├── CURRENT_EXPERIMENT_PROGRESS.md
 │   ├── FULL_SCORE_EXPERIMENT_PLAN.md
 │   ├── KAGGLE_DEEP_LEARNING.md
+│   ├── DEEP_LEARNING_EXTENSION_RESULTS.md
 │   ├── ABCD_GROUPED_INTEGRATION.md
 │   ├── PRESENTATION_HIGHLIGHTS.md
 │   ├── STRICT_GROUPED_RESULTS.md
@@ -266,6 +267,7 @@ The strongest presentation/report points are recorded in:
 - `docs/STRICT_GROUPED_RESULTS.md`
 - `docs/FULL_SCORE_EXPERIMENT_PLAN.md`
 - `docs/KAGGLE_DEEP_LEARNING.md`
+- `docs/DEEP_LEARNING_EXTENSION_RESULTS.md`
 
 Key messages:
 

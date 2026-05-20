@@ -1,5 +1,6 @@
 import argparse
 import os
+import random
 import sys
 from pathlib import Path
 
@@ -181,13 +182,34 @@ def _device(preferred="auto"):
     return torch.device("cpu")
 
 
-def _evaluate(model, loader, device):
+def _set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def _forward_logits(model, images, eval_tta=False):
+    if not eval_tta:
+        return model(images)
+
+    logits = [
+        model(images),
+        model(torch.flip(images, dims=[3])),
+        model(torch.flip(images, dims=[2])),
+        model(torch.flip(images, dims=[2, 3])),
+    ]
+    return torch.stack(logits, dim=0).mean(dim=0)
+
+
+def _evaluate(model, loader, device, eval_tta=False):
     model.eval()
     y_true, y_pred = [], []
     with torch.no_grad():
         for images, labels in loader:
             images = images.to(device)
-            logits = model(images)
+            logits = _forward_logits(model, images, eval_tta=eval_tta)
             pred = logits.argmax(dim=1).cpu().numpy()
             y_pred.extend(pred.tolist())
             y_true.extend(labels.numpy().tolist())
@@ -229,6 +251,7 @@ def _metric(metrics, name):
 
 
 def train_deep(args):
+    _set_seed(args.random_state)
     data_dir = Path(args.data_dir)
     labels = load_labels(data_dir)
     labels["image_id"] = labels["image_id"].astype(str)
@@ -284,7 +307,7 @@ def train_deep(args):
     history = []
     epochs_without_improvement = 0
 
-    print(f"device={device} pretrained={args.pretrained} model={args.model}")
+    print(f"device={device} pretrained={args.pretrained} model={args.model} eval_tta={args.eval_tta}")
     print(f"train={len(train_labels)} valid={len(valid_labels)} monitor={args.monitor}")
 
     for epoch in range(1, args.epochs + 1):
@@ -310,7 +333,7 @@ def train_deep(args):
             losses.append(float(loss.item()))
 
         scheduler.step()
-        metrics = _evaluate(model, valid_loader, device)
+        metrics = _evaluate(model, valid_loader, device, eval_tta=args.eval_tta)
         score = _metric(metrics, args.monitor)
         row = {
             "epoch": epoch,
@@ -363,9 +386,21 @@ def train_deep(args):
             "random_state": args.random_state,
             "device": str(device),
             "image_size": args.image_size,
+            "batch_size": args.batch_size,
+            "epochs": args.epochs,
+            "lr": args.lr,
+            "finetune_lr": args.finetune_lr,
+            "weight_decay": args.weight_decay,
+            "label_smoothing": args.label_smoothing,
+            "freeze_backbone_epochs": args.freeze_backbone_epochs,
+            "patience": args.patience,
             "crop": args.crop,
             "crop_pad": args.crop_pad,
             "mask_mode": args.mask_mode,
+            "augment_strength": args.augment_strength,
+            "eval_tta": args.eval_tta,
+            "balanced_sampler": args.balanced_sampler,
+            "class_weights": not args.no_class_weights,
         }]).to_csv(output_dir / "deep_best_metrics.csv", index=False)
         print(
             f"best {args.monitor}={best_score:.4f} "
@@ -400,6 +435,7 @@ def main():
     parser.add_argument("--balanced_sampler", action="store_true")
     parser.add_argument("--cache_images", action="store_true")
     parser.add_argument("--no_class_weights", action="store_true")
+    parser.add_argument("--eval_tta", action="store_true")
     args = parser.parse_args()
     train_deep(args)
 

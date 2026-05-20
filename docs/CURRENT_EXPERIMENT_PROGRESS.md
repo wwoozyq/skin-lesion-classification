@@ -195,6 +195,16 @@ The `0.65` accuracy line is treated only as a minimum reference baseline. The
 runner does not stop after reaching it; once the deep model is clearly above
 that level, the goal becomes finding the strongest accuracy/macro-F1 variant.
 
+Current best deep-learning extension result:
+
+| run | device | accuracy | macro-F1 | balanced accuracy |
+|---|---|---:|---:|---:|
+| `score_mobilenet_192_clean_pad035_acc_tta` | MPS | 0.8750 | 0.8623 | 0.8533 |
+
+This run uses ImageNet-pretrained MobileNetV2, `image_size=192`, `mask=clean`,
+`crop_pad=0.35`, `monitor=accuracy`, and validation-time TTA. Details are
+recorded in `docs/DEEP_LEARNING_EXTENSION_RESULTS.md`.
+
 ## 6. Mel/NV Error-Driven Optimization
 
 Motivation:
