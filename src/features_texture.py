@@ -21,7 +21,6 @@ def _safe_mask_pixels(arr, mask):
 
 
 # --- Gray-level histogram (original baseline feature) ---
-
 def extract_gray_histogram(gray, mask):
     features = {}
     pixels = _safe_mask_pixels(gray, mask)

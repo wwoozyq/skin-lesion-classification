@@ -25,6 +25,7 @@ def extract_features_for_image(image, mask, feature_set="all"):
         "final",
         "final_melnv",
     }
+    # 如果传入参数feature_sets中，就提取color / shape / texture 三大基础特征
     if feature_set in baseline_sets | {"color"}:
         features.update(extract_color_features(image, mask))
     if feature_set in baseline_sets | {"shape"}:
@@ -40,7 +41,6 @@ def extract_features_for_image(image, mask, feature_set="all"):
     if feature_set in {"melnv", "all_melnv", "all_boundary_melnv", "final_melnv"}:
         features.update(extract_melnv_features(image, mask))
     return features
-
 
 def build_feature_table(data_dir, image_ids=None, feature_set="all", mask_mode="raw"):
     if image_ids is None:
