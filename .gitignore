@@ -13,14 +13,16 @@ outputs/models/*.pkl
 outputs/models/*.joblib
 outputs/models/*.pth
 outputs/models/*.pt
-outputs/metrics/*.csv
-outputs/metrics/*.txt
+# 允许上传指标 CSV / TXT 报告 / 图表 (项目最终交付的一部分)
+# outputs/metrics/*.csv
+# outputs/metrics/*.txt
 outputs/metrics/*/
-outputs/figures/
-outputs/figures/*.png
-outputs/figures/*.jpg
+# outputs/figures/
+# outputs/figures/*.png
+# outputs/figures/*.jpg
 outputs/deep/
 output.csv
+output_v2.csv
 
 # OS / editor
 .DS_Store
