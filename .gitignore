@@ -13,6 +13,8 @@ outputs/models/*.pkl
 outputs/models/*.joblib
 outputs/models/*.pth
 outputs/models/*.pt
+# 例外: 上传最终 cascade v2 模型 (430KB, 用于 run_v2.py 推理)
+!outputs/models/cascade_v2_d2moretrees_k100_soft.joblib
 # 允许上传指标 CSV / TXT 报告 / 图表 (项目最终交付的一部分)
 # outputs/metrics/*.csv
 # outputs/metrics/*.txt
