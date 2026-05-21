@@ -5,7 +5,12 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import (
+    ExtraTreesClassifier,
+    GradientBoostingClassifier,
+    HistGradientBoostingClassifier,
+    RandomForestClassifier,
+)
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold, cross_val_predict
@@ -23,13 +28,94 @@ from .utils import base_id_from_image_id, ensure_dir
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, module=r"sklearn\.")
 
+try:
+    from xgboost import XGBClassifier
+except ImportError:  # pragma: no cover - optional dependency for traditional score search.
+    XGBClassifier = None
+
 CLASSIFIERS = {
     "svm": SVC(kernel="rbf", C=100, class_weight="balanced", random_state=42),
     "rf": RandomForestClassifier(n_estimators=300, max_depth=15, class_weight="balanced", random_state=42, n_jobs=-1),
+    "rf_strong": RandomForestClassifier(
+        n_estimators=600,
+        max_depth=None,
+        max_features="sqrt",
+        class_weight="balanced_subsample",
+        random_state=42,
+        n_jobs=-1,
+    ),
+    "et": ExtraTreesClassifier(
+        n_estimators=800,
+        max_depth=None,
+        max_features="sqrt",
+        class_weight="balanced",
+        random_state=42,
+        n_jobs=-1,
+    ),
+    "gb": GradientBoostingClassifier(
+        n_estimators=200,
+        learning_rate=0.05,
+        max_depth=2,
+        random_state=42,
+    ),
+    "hgb": HistGradientBoostingClassifier(
+        learning_rate=0.06,
+        max_iter=200,
+        max_leaf_nodes=15,
+        l2_regularization=0.1,
+        class_weight="balanced",
+        random_state=42,
+    ),
     "lr": LogisticRegression(C=1, max_iter=1000, class_weight="balanced", random_state=42),
     "lr03": LogisticRegression(C=0.3, max_iter=2000, class_weight="balanced", random_state=42),
     "knn": KNeighborsClassifier(n_neighbors=7, weights="distance"),
 }
+
+if XGBClassifier is not None:
+    CLASSIFIERS.update({
+        "xgb": XGBClassifier(
+            n_estimators=150,
+            max_depth=2,
+            learning_rate=0.05,
+            subsample=0.8,
+            colsample_bytree=0.6,
+            reg_lambda=5.0,
+            objective="multi:softprob",
+            eval_metric="mlogloss",
+            tree_method="hist",
+            random_state=42,
+            n_jobs=-1,
+            verbosity=0,
+        ),
+        "xgb_strong_reg": XGBClassifier(
+            n_estimators=150,
+            max_depth=2,
+            learning_rate=0.05,
+            subsample=0.7,
+            colsample_bytree=0.5,
+            reg_lambda=10.0,
+            objective="multi:softprob",
+            eval_metric="mlogloss",
+            tree_method="hist",
+            random_state=42,
+            n_jobs=-1,
+            verbosity=0,
+        ),
+        "xgb_d2_more_trees": XGBClassifier(
+            n_estimators=300,
+            max_depth=2,
+            learning_rate=0.03,
+            subsample=0.8,
+            colsample_bytree=0.6,
+            reg_lambda=5.0,
+            objective="multi:softprob",
+            eval_metric="mlogloss",
+            tree_method="hist",
+            random_state=42,
+            n_jobs=-1,
+            verbosity=0,
+        ),
+    })
 
 FEATURE_SETS = [
     "all",
@@ -51,6 +137,18 @@ FEATURE_SETS = [
     "final",
     "final_melnv",
     "final_abcd_grouped",
+    "lbp_multi",
+    "gabor",
+    "subregion",
+    "all_lbp_multi",
+    "all_gabor",
+    "all_subregion",
+    "all_texture_plus",
+    "all_boundary_melnv_texture_plus",
+    "xgb_cascade_stage1",
+    "xgb_cascade_stage2",
+    "early_fusion_core",
+    "early_fusion_full",
 ]
 
 
@@ -216,11 +314,18 @@ def train_ml(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", required=True)
-    parser.add_argument("--feature_set", default="all", choices=FEATURE_SETS)
+    parser.add_argument(
+        "--feature_set",
+        default="all",
+        help=(
+            "Feature set alias or '+' expression. Examples: all_abcd_grouped, "
+            "xgb_cascade_stage2, all+boundary+melnv+lbp_multi+gabor+subregion."
+        ),
+    )
     parser.add_argument("--k_features", default="all",
                         help="Number of top features to keep via f_classif, or 'all'.")
     parser.add_argument("--classifier", default="svm", choices=list(CLASSIFIERS.keys()),
-                        help="Classifier to use: svm (default), rf, lr.")
+                        help="Classifier to use, e.g. svm, lr03, rf_strong, et, gb, hgb.")
     parser.add_argument("--cv", default="grouped", choices=["grouped", "stratified"],
                         help="Cross-validation protocol. Use grouped to keep augmentations together.")
     parser.add_argument("--n_splits", type=int, default=5)

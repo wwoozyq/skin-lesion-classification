@@ -1,0 +1,11 @@
+method,protocol,accuracy,macro_f1,balanced_accuracy,role
+Earlier boundary LR,seed 127 grouped OOF,0.7233,0.7454,0.7535,historical baseline
+Main ABCD grouped LR03,seed 127 grouped OOF,0.7600,0.7715,0.7871,stable main model
+Main ABCD grouped LR03,five-seed mean,0.7283,0.7435,0.7512,stability estimate
+XGBoost cascade,seed 127 grouped OOF,0.7617,0.7802,0.8017,exploratory high-score
+XGBoost cascade,best five-seed bagged,0.7500,0.7655,0.7887,exploratory stability
+Early fusion,seed 127 grouped OOF,0.7700,0.7830,0.7997,feature-fusion ablation
+Early fusion,best five-seed mean,0.7450,0.7618,0.7766,feature-fusion stability
+Late probability fusion,seed 127 grouped OOF,0.7717,0.7909,0.8055,best single-seed result
+Late probability fusion,five-seed bagged,0.7417,0.7607,0.7763,fusion stability check
+MobileNetV2,grouped validation extension,0.8750,0.8623,0.8533,deep-learning extension only

@@ -5,7 +5,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import (
+    ExtraTreesClassifier,
+    GradientBoostingClassifier,
+    HistGradientBoostingClassifier,
+    RandomForestClassifier,
+)
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedGroupKFold
@@ -62,6 +67,40 @@ def _classifier(name):
             class_weight="balanced",
             random_state=42,
             n_jobs=-1,
+        )
+    if name == "rf_strong":
+        return RandomForestClassifier(
+            n_estimators=600,
+            max_depth=None,
+            max_features="sqrt",
+            class_weight="balanced_subsample",
+            random_state=42,
+            n_jobs=-1,
+        )
+    if name == "et":
+        return ExtraTreesClassifier(
+            n_estimators=800,
+            max_depth=None,
+            max_features="sqrt",
+            class_weight="balanced",
+            random_state=42,
+            n_jobs=-1,
+        )
+    if name == "gb":
+        return GradientBoostingClassifier(
+            n_estimators=200,
+            learning_rate=0.05,
+            max_depth=2,
+            random_state=42,
+        )
+    if name == "hgb":
+        return HistGradientBoostingClassifier(
+            learning_rate=0.06,
+            max_iter=200,
+            max_leaf_nodes=15,
+            l2_regularization=0.1,
+            class_weight="balanced",
+            random_state=42,
         )
     if name == "knn":
         return KNeighborsClassifier(n_neighbors=7, weights="distance")
