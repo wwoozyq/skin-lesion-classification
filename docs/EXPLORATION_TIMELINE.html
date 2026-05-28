@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>皮肤病变三分类 · 探索时间线</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card: #ffffff;
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --orange: #ea580c;
+    --red: #dc2626;
+    --purple: #7c3aed;
+    --yellow: #ca8a04;
+    --accent: #0f766e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+                 "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    font-size: 14px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 24px 80px; }
+  header {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    color: #fff;
+    padding: 32px 24px;
+    border-radius: 14px;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 16px rgba(15,118,110,0.18);
+  }
+  header h1 { margin: 0 0 6px; font-size: 26px; }
+  header p { margin: 4px 0; opacity: 0.92; font-size: 14px; }
+  header .sub { opacity: 0.75; font-size: 12px; letter-spacing: 0.4px; }
+  h2 {
+    font-size: 20px;
+    margin: 36px 0 14px;
+    padding-left: 10px;
+    border-left: 4px solid var(--accent);
+  }
+  h3 { font-size: 16px; margin: 18px 0 8px; }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .hero-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .hero-card.main { border-left: 4px solid var(--green); }
+  .hero-card.ext  { border-left: 4px solid var(--purple); }
+  .hero-card .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .hero-card .title { font-weight: 600; margin-bottom: 10px; }
+  .hero-card table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .hero-card td { padding: 3px 0; }
+  .hero-card td.metric { color: var(--muted); }
+  .hero-card td.value { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+  table.data th {
+    background: #f3f4f6;
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--line);
+  }
+  table.data td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data td.num { text-align: right; }
+  table.data tr.highlight { background: #ecfdf5; }
+  table.data tr.negative { background: #fef2f2; }
+  table.data tr.explore { background: #fff7ed; }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .pill.main { background: #dcfce7; color: #15803d; }
+  .pill.explore { background: #ffedd5; color: #c2410c; }
+  .pill.negative { background: #fee2e2; color: #b91c1c; }
+  .pill.method { background: #dbeafe; color: #1d4ed8; }
+  .pill.ext { background: #ede9fe; color: #6d28d9; }
+  .pill.merged { background: #e0e7ff; color: #3730a3; }
+  .pill.orphan { background: #f3f4f6; color: #4b5563; }
+  .timeline { position: relative; margin: 20px 0; padding-left: 28px; }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: var(--line);
+  }
+  .tl-item { position: relative; margin-bottom: 22px; }
+  .tl-item::before {
+    content: "";
+    position: absolute;
+    left: -24px;
+    top: 12px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 3px solid var(--blue);
+  }
+  .tl-item.main::before    { border-color: var(--green); }
+  .tl-item.explore::before { border-color: var(--orange); }
+  .tl-item.negative::before{ border-color: var(--red); }
+  .tl-item.ext::before     { border-color: var(--purple); }
+  .tl-item.method::before  { border-color: var(--blue); }
+  .tl-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .tl-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .tl-date {
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .tl-title { font-weight: 600; font-size: 15px; flex: 1; }
+  .tl-meta {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 4px 0 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .tl-body { font-size: 13px; color: var(--ink); }
+  .tl-body p { margin: 6px 0; }
+  .tl-body ul { margin: 4px 0; padding-left: 18px; }
+  .tl-body li { margin: 2px 0; }
+  code, .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, "JetBrains Mono", monospace;
+    font-size: 12.5px;
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .delta-up   { color: var(--green); font-weight: 600; }
+  .delta-down { color: var(--red);   font-weight: 600; }
+  .delta-zero { color: var(--muted); }
+  .closure {
+    background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 22px;
+    margin: 20px 0;
+  }
+  .closure h3 { margin-top: 0; color: #92400e; }
+  .closure ol { margin: 10px 0; padding-left: 22px; }
+  .closure ol li { margin: 6px 0; }
+  .branches { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .branch {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: start;
+  }
+  .branch .name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; }
+  .branch .desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .branch .right { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .team-table { width: 100%; border-collapse: collapse; }
+  .team-table th, .team-table td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: top; }
+  .team-table th { background: #f3f4f6; }
+  .team-table td.role { font-weight: 600; width: 110px; }
+  .footnote { color: var(--muted); font-size: 12px; margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .legend span::before { content: "●"; margin-right: 4px; }
+  .legend .main    { color: var(--green); }
+  .legend .method  { color: var(--blue); }
+  .legend .explore { color: var(--orange); }
+  .legend .negative{ color: var(--red); }
+  .legend .ext     { color: var(--purple); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>皮肤病变三分类 · 完整探索时间线</h1>
+  <p>Biomedical Image Processing · Project 2 · 2026 春季</p>
+  <p>200 lesions × 3 versions (orig + 2 aug) = 600 images，类别 mel/nv/vasc，禁止深度学习用于定量主提交</p>
+  <p class="sub">仓库 wwoozyq/skin-lesion-classification · 最后更新 2026-05-28</p>
+</header>
+
+<!-- ============================================================== -->
+<h2>1 · 当前最终结论</h2>
+<div class="hero-grid">
+  <div class="hero-card main">
+    <div class="label">官方传统 ML 主模型（用于 output.csv）</div>
+    <div class="title">all_abcd_grouped + LogisticRegression(C=0.3) + SelectKBest(k=140)<br>StratifiedGroupKFold(5) by base_id, mask_mode=raw</div>
+    <table>
+      <tr><td class="metric">seed 127 Accuracy</td><td class="value">0.7600</td></tr>
+      <tr><td class="metric">seed 127 Macro-F1</td><td class="value">0.7715</td></tr>
+      <tr><td class="metric">seed 127 Balanced Accuracy</td><td class="value">0.7871</td></tr>
+      <tr><td class="metric">5-seed Macro-F1 mean ± std</td><td class="value">0.7435 ± 0.0271</td></tr>
+      <tr><td class="metric">5-seed Balanced Accuracy</td><td class="value">0.7512</td></tr>
+    </table>
+  </div>
+  <div class="hero-card ext">
+    <div class="label">深度学习扩展（不进定量主提交）</div>
+    <div class="title">MobileNetV2，ImageNet 预训练，mask-crop，TTA<br>同样使用 grouped validation</div>
+    <table>
+      <tr><td class="metric">Accuracy</td><td class="value">0.8750</td></tr>
+      <tr><td class="metric">Macro-F1</td><td class="value">0.8623</td></tr>
+      <tr><td class="metric">Balanced Accuracy</td><td class="value">0.8533</td></tr>
+    </table>
+  </div>
+</div>
+<div class="legend">
+  <span class="method">方法学修正</span>
+  <span class="main">主线选定</span>
+  <span class="explore">探索性候选</span>
+  <span class="negative">负结果（已闭合）</span>
+  <span class="ext">深度学习扩展</span>
+</div>
+
+<!-- ============================================================== -->
+<h2>2 · 完整时间线</h2>
+<div class="timeline">
+
+<!-- 1 -->
+<div class="tl-item method">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-06</span>
+      <span class="tl-title">项目初始化 · baseline 仓库结构</span>
+      <span class="pill method">methodology</span>
+    </div>
+    <div class="tl-meta">commit dfcd083 · "init project structure and baseline"</div>
+    <div class="tl-body">
+      <p>建立 <code>src/dataset.py</code>、<code>src/train_ml.py</code>、<code>data/Data_Proj2/</code> 软链接、最基础的颜色/形状/纹理特征。</p>
+      <p>第一轮 image-level 随机划分跑出 ~90% Macro-F1。<strong>这个分数后来被证明是错的</strong>。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="tl-item explore">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-07 → 05-17</span>
+      <span class="tl-title">并行特征工程：6 条 feature/* 分支</span>
+      <span class="pill explore">parallel branches</span>
+    </div>
+    <div class="tl-meta">feature/contrast-example · feature/abcd · feature/abcd-clean · feature/external-data-research · feature/boundary-integration · feature/texture</div>
+    <div class="tl-body">
+      <p>5 人小组各认领一类手工特征，并行开分支：</p>
+      <ul>
+        <li><code>feature/contrast-example</code>：lesion-background contrast（亮度/饱和度差）</li>
+        <li><code>feature/abcd</code> / <code>feature/abcd-clean</code>：Asymmetry / Border / Color / Diameter 的工程化实现</li>
+        <li><code>feature/external-data-research</code>：调研 ISIC 外部数据是否合规（结论：定量主线不许用，扩展可用）</li>
+        <li><code>feature/boundary-integration</code>：凸包、fractal 边界复杂度</li>
+        <li><code>feature/texture</code>：LBP / GLCM / Sobel，并尝试切到 SVM</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 3 -->
+<div class="tl-item method">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-18</span>
+      <span class="tl-title">⚠️ 发现增强泄漏 · 切换到 StratifiedGroupKFold</span>
+      <span class="pill method">critical fix</span>
+    </div>
+    <div class="tl-meta">commit bf9f89b · "docs: record grouped validation experiments"</div>
+    <div class="tl-body">
+      <p>数据中每个 lesion 有 3 个版本：<code>100.jpg</code> / <code>100_aug1.jpg</code> / <code>100_aug2.jpg</code>。随机按图片划分会让训练集和验证集出现<strong>同一个 lesion 的不同版本</strong>，导致模型只是在认增强。</p>
+      <p>修正方案：<code>StratifiedGroupKFold</code>，group key 取 <code>base_id_from_image_id</code>（去掉 <code>_aug*</code> 后缀），保证一个 lesion 的所有版本永远在同一 fold。</p>
+      <p><strong>诚实分数立刻下跌</strong>：</p>
+      <table class="data">
+        <tr><th>协议</th><th class="num">image-level（错）</th><th class="num">grouped CV（正确）</th></tr>
+        <tr><td>Macro-F1（早期 all_boundary+LR）</td><td class="num delta-down">~0.91</td><td class="num">0.7454</td></tr>
+      </table>
+      <p>这是整个项目最大的方法学贡献，也是助教/老师最看重的一点。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 4 -->
+<div class="tl-item explore">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-19</span>
+      <span class="tl-title">分支 abcd-grouped-optimization：ABCD grouped 特征</span>
+      <span class="pill explore">branch</span>
+      <span class="pill merged">merged</span>
+    </div>
+    <div class="tl-meta">commit 9ce3cae → 集成 ac3a45e (codex/integrate-abcd-grouped)</div>
+    <div class="tl-body">
+      <p>把 ABCD 特征按医学含义重新分组（asymmetry block / border block / color block / diameter block），并配 <code>LogisticRegression(C=0.3, class_weight=balanced)</code> + <code>SelectKBest(k=140)</code>。</p>
+      <table class="data">
+        <tr><th>模型</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">Bal-Acc</th><th class="num">delta</th></tr>
+        <tr><td>旧 all_boundary + LR (k=100)</td><td class="num">0.7233</td><td class="num">0.7454</td><td class="num">0.7535</td><td class="num">—</td></tr>
+        <tr class="highlight"><td>all_abcd_grouped + LR03 (k=140) ★</td><td class="num">0.7600</td><td class="num">0.7715</td><td class="num">0.7871</td><td class="num delta-up">+0.034</td></tr>
+      </table>
+      <p>★ <strong>定为传统 ML 主线，此后所有改动以此为 baseline 衡量</strong>。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 5 -->
+<div class="tl-item ext">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-19 → 05-20</span>
+      <span class="tl-title">深度学习扩展（Kaggle 离线训）</span>
+      <span class="pill ext">extension</span>
+    </div>
+    <div class="tl-meta">011437a (Kaggle guide) → 3816c8a / af592c2 (low-load deep night runner) → 05ae016 (deep results)</div>
+    <div class="tl-body">
+      <p>课程规则禁止用 DL 做定量主提交，但允许作为对照扩展。本机 Mac 无 GPU，写 Kaggle runner 把 MobileNetV2 / ResNet18 跑离线。</p>
+      <table class="data">
+        <tr><th>模型</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">Bal-Acc</th></tr>
+        <tr class="explore"><td>MobileNetV2 + mask-crop + TTA</td><td class="num">0.8750</td><td class="num">0.8623</td><td class="num">0.8533</td></tr>
+      </table>
+      <p>放在报告 §"Deep Learning Extension"，与传统主线<strong>不混淆</strong>。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 6 -->
+<div class="tl-item explore">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-21</span>
+      <span class="tl-title">分支 model：XGBoost cascade</span>
+      <span class="pill explore">branch</span>
+      <span class="pill merged">code merged · 标为 exploratory</span>
+    </div>
+    <div class="tl-meta">commit 1ad39ee → src/train_ml_cascade.py + experiments/run_xgb_cascade_search.py</div>
+    <div class="tl-body">
+      <p>临床直觉的两段式：Stage 1 把 vasc 切出来，Stage 2 在 non-vasc 内分 mel/nv。<code>P(vasc) = S1</code>, <code>P(mel) = (1-S1)·S2_mel</code>, <code>P(nv) = (1-S1)·S2_nv</code>。</p>
+      <table class="data">
+        <tr><th>协议</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">Bal-Acc</th></tr>
+        <tr class="explore"><td>integrated seed 127 smoke</td><td class="num">0.7617</td><td class="num">0.7802</td><td class="num">0.8017</td></tr>
+        <tr><td>5-seed bagged</td><td class="num">0.7500</td><td class="num">0.7655</td><td class="num">0.7887</td></tr>
+      </table>
+      <p>5-seed bagged 略高于 LR 主线，但代价是复杂度高、可解释性差，<strong>不替换主线，仅作 exploratory</strong>。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 7 -->
+<div class="tl-item explore">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-21</span>
+      <span class="tl-title">Early Fusion（前端特征拼接）</span>
+      <span class="pill explore">in-tree</span>
+    </div>
+    <div class="tl-meta">experiments/run_early_fusion_search.py · docs/EARLY_FUSION_RESULTS.md</div>
+    <div class="tl-body">
+      <p>把多个手工特征族拼成一个大向量，OOF 调 class_weight，单个分类器训练。</p>
+      <table class="data">
+        <tr><th>协议</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">Bal-Acc</th></tr>
+        <tr class="explore"><td>seed 127, OOF-tuned</td><td class="num">0.7700</td><td class="num">0.7830</td><td class="num">0.7997</td></tr>
+        <tr><td>5-seed mean</td><td class="num">0.7450</td><td class="num">0.7618</td><td class="num">0.7766</td></tr>
+      </table>
+      <p>单种子接近 0.80，但 5-seed 稳定性不显著超过主线。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 8 -->
+<div class="tl-item explore">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-21</span>
+      <span class="tl-title">Late Probability Fusion · 单 seed 见到 0.8055</span>
+      <span class="pill explore">in-tree</span>
+    </div>
+    <div class="tl-meta">experiments/run_fusion_ensemble.py · src/train_ml_fusion.py · docs/FUSION_ENSEMBLE_RESULTS.md</div>
+    <div class="tl-body">
+      <p><code>P_final = 0.5 · P_LR_main + 0.5 · P_cascade</code>，在 fold 内对 OOF probas 加权后 argmax。</p>
+      <table class="data">
+        <tr><th>协议</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">Bal-Acc</th></tr>
+        <tr class="highlight"><td>seed 127（单 seed 高分）</td><td class="num">0.7717</td><td class="num">0.7909</td><td class="num"><strong>0.8055</strong></td></tr>
+        <tr><td>5-seed bagged（诚实数）</td><td class="num">0.7417</td><td class="num">0.7607</td><td class="num">0.7763</td></tr>
+      </table>
+      <p>"1 + 1 &gt; 1" 在单 seed 上成立，但 5-seed bagged 回落到 0.7763 —— 0.8055 是否单 seed 噪声？此时<strong>悬而未决</strong>，留待后续验证。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 9 -->
+<div class="tl-item method">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-21</span>
+      <span class="tl-title">分支 codex/traditional-ml-score-search：组织文档证据链</span>
+      <span class="pill method">docs merged</span>
+    </div>
+    <div class="tl-meta">commit 2765acb · "docs: organize experiment evidence and validation"</div>
+    <div class="tl-body">
+      <p>把所有实验落地到结构化文档：</p>
+      <ul>
+        <li><code>docs/EXPERIMENT_LEDGER.md</code> · 实验流水账，含 negative results</li>
+        <li><code>docs/PROJECT_REVIEW_GUIDE.md</code> · 最终故事 + 证据链</li>
+        <li><code>docs/results_summary.csv</code> · PPT 总表</li>
+        <li><code>docs/REPRODUCIBILITY_CHECKLIST.md</code> · 提交前验收</li>
+        <li><code>docs/PRESENTATION_HIGHLIGHTS.md</code> · 报告口径统一</li>
+      </ul>
+      <p>这里是项目"研发 → 报告"的拐点。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 10 -->
+<div class="tl-item negative">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-28</span>
+      <span class="tl-title">分支 tta-nested-fusion：验证 0.8055 是不是真的</span>
+      <span class="pill negative">negative</span>
+      <span class="pill explore">branch · not merged</span>
+    </div>
+    <div class="tl-meta">commit 55da6bd · experiments/run_tta_nested_fusion.py · 676 行</div>
+    <div class="tl-body">
+      <p><strong>怀疑</strong>：现有 fusion 在同一组 OOF 行上既训分类器又调 weight，是 in-sample 过拟合。<strong>方案</strong>：嵌套 CV（外 5 fold + 内 3 fold 选 weight）+ 6 变换 TTA 平均（identity / hflip / vflip / rot90 / rot180 / rot270）。</p>
+      <p>4-cell ablation，5-seed bagged：</p>
+      <table class="data">
+        <tr><th>cell</th><th>TTA</th><th>tune w</th><th class="num">Bal-Acc</th><th class="num">Macro-F1</th><th class="num">Accuracy</th></tr>
+        <tr><td>A</td><td>否</td><td>否 (w=0.5)</td><td class="num">0.7763</td><td class="num">0.7607</td><td class="num">0.7417</td></tr>
+        <tr><td>B</td><td>是</td><td>否 (w=0.5)</td><td class="num">0.7753</td><td class="num">0.7610</td><td class="num">0.7433</td></tr>
+        <tr><td>C</td><td>否</td><td>是 (nested)</td><td class="num">0.7715</td><td class="num">0.7571</td><td class="num">0.7383</td></tr>
+        <tr><td>D</td><td>是</td><td>是 (nested)</td><td class="num">0.7726</td><td class="num">0.7584</td><td class="num">0.7400</td></tr>
+      </table>
+      <p>Cell A 逐位复现现有 fusion bagged（pipeline sanity 通过）。Cells B/C/D 全部 <span class="delta-zero">|Δ| &lt; 0.005</span>。Nested-w 诚实地选 w = 0.562 ± 0.143，不是 0.5。</p>
+      <p><strong>结论：0.8055 是 in-sample 噪声，0.7763 才是 late fusion 的诚实天花板</strong>。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 11 -->
+<div class="tl-item method">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-28</span>
+      <span class="tl-title">Lesion-hard 错误归因 · 25 个全错 lesion 分桶</span>
+      <span class="pill method">analysis</span>
+    </div>
+    <div class="tl-meta">commit 17fa036 · docs/LESION_HARD_ERROR_ANALYSIS.md · experiments/visualize_lesion_hard.py</div>
+    <div class="tl-body">
+      <p>从 seed 127 的 144 个错误中找出 25 个"3 个版本全错"的 lesion，逐张人眼分桶：</p>
+      <table class="data">
+        <tr><th>桶</th><th class="num">n</th><th>例子 base_id</th><th>可不可救</th></tr>
+        <tr class="negative"><td>mel → nv 良性表型（早期 in-situ mel）</td><td class="num">10</td><td>51, 55, 57, 73, 105, 116, 124, 175, 186, 200</td><td><span class="delta-down">不可救</span> · 需 dermoscopic pattern</td></tr>
+        <tr class="negative"><td>nv → mel 非典型表型（dysplastic nevi）</td><td class="num">5</td><td>26, 33, 90, 120, 197</td><td><span class="delta-down">不可救</span> · 视觉就是 atypical</td></tr>
+        <tr class="explore"><td>红色区域触发 vasc 错判</td><td class="num">4</td><td>7, 71, 185, 189</td><td>弱可救</td></tr>
+        <tr class="highlight"><td>毛发遮挡</td><td class="num">2</td><td>24, 154</td><td><span class="delta-up">可救</span> · 预处理</td></tr>
+        <tr><td>其他 / 唯一被错判的真 vasc</td><td class="num">4</td><td>23, 40, 76, 84</td><td>—</td></tr>
+      </table>
+      <p><strong>关键发现：没有任何明显的 label error</strong>。错误来自真实的生物学表型重叠，不是数据脏。"算法可救"的桶只有毛发遮挡 2 张。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 12 -->
+<div class="tl-item negative">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-28</span>
+      <span class="tl-title">分支 hair-removal-eval：闭合最后可救的桶</span>
+      <span class="pill negative">negative</span>
+      <span class="pill explore">branch · not merged</span>
+    </div>
+    <div class="tl-meta">commit 3f56bf0 · experiments/run_hair_removal_eval.py · 287 行</div>
+    <div class="tl-body">
+      <p>DullRazor 风格：grayscale → black-tophat (horizontal + vertical rectangles) → threshold → dilate → 每通道 median fill。</p>
+      <table class="data">
+        <tr><th>seed</th><th class="num">原图 Bal-Acc</th><th class="num">去毛发 Bal-Acc</th><th class="num">Δ</th></tr>
+        <tr><td>42</td><td class="num">0.7502</td><td class="num">0.7339</td><td class="num delta-down">-0.016</td></tr>
+        <tr><td>127</td><td class="num">0.7871</td><td class="num">0.7597</td><td class="num delta-down">-0.027</td></tr>
+        <tr><td>2024</td><td class="num">0.7658</td><td class="num">0.7452</td><td class="num delta-down">-0.021</td></tr>
+        <tr><td>3407</td><td class="num">0.7464</td><td class="num">0.7232</td><td class="num delta-down">-0.023</td></tr>
+        <tr><td>520</td><td class="num">0.7065</td><td class="num">0.7157</td><td class="num delta-up">+0.009</td></tr>
+        <tr class="negative"><td><strong>bagged</strong></td><td class="num"><strong>0.7674</strong></td><td class="num"><strong>0.7455</strong></td><td class="num delta-down"><strong>-0.022</strong></td></tr>
+      </table>
+      <p><strong>机制</strong>：600 张图里只有 2 张真有毛发，但 black-tophat 阈值在另外 598 张上误判为毛发的像素里包含真实的 dark border / atypical pigment network。median 替换把这些有用信号一起抹掉了。<strong>2 张救援 vs 598 张普遍伤害 → 净负 -0.022</strong>。</p>
+      <p>原图 per-seed 均值 BalAcc = 0.7512，逐位匹配 memory baseline，sanity 通过。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 13 -->
+<div class="tl-item main">
+  <div class="tl-card">
+    <div class="tl-head">
+      <span class="tl-date">2026-05-28</span>
+      <span class="tl-title">天花板闭合 · 主线最终定位</span>
+      <span class="pill main">closure</span>
+    </div>
+    <div class="tl-meta">main HEAD 1ae4cfe</div>
+    <div class="tl-body">
+      <p>两条 negative（TTA + nested-w · hair removal）把 0.78 BalAcc 从"外推上限"变成"有证据的结构性上限"。</p>
+      <p><strong>报告口径不变</strong>：</p>
+      <ul>
+        <li>主线 = <code>all_abcd_grouped + LR03 + k=140</code>，5-seed Bal-Acc <code>0.7512</code></li>
+        <li>探索亮点 = late fusion 5-seed bagged <code>0.7763</code>（不报 0.8055 单 seed）</li>
+        <li>扩展 = MobileNetV2 BalAcc <code>0.8533</code>，与主线分开陈述</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div><!-- /.timeline -->
+
+<!-- ============================================================== -->
+<h2>3 · 分支地图</h2>
+<div class="branches">
+  <div class="branch">
+    <div>
+      <div><span class="name">main</span></div>
+      <div class="desc">当前 HEAD <code>1ae4cfe</code>。最终主线、所有文档、所有 negative result 的 ledger 记录都在这里。</div>
+    </div>
+    <div class="right"><span class="pill main">official</span></div>
+  </div>
+
+  <div class="branch">
+    <div>
+      <div><span class="name">feature/contrast-example · feature/abcd · feature/abcd-clean · feature/external-data-research · feature/boundary-integration · feature/texture</span></div>
+      <div class="desc">2026-05-07 → 05-17 · 五人小组的并行特征工程分支，全部已 merge 进 main。</div>
+    </div>
+    <div class="right"><span class="pill explore">parallel feat</span><span class="pill merged">merged</span></div>
+  </div>
+
+  <div class="branch">
+    <div>
+      <div><span class="name">abcd-grouped-optimization → codex/integrate-abcd-grouped</span></div>
+      <div class="desc">ABCD 分组特征 + LR03 + k=140 → 选为主线，已 merge。</div>
+    </div>
+    <div class="right"><span class="pill main">main line origin</span><span class="pill merged">merged</span></div>
+  </div>
+
+  <div class="branch">
+    <div>
+      <div><span class="name">model</span></div>
+      <div class="desc">XGBoost cascade。代码已 merge 进 src/，但定位为 exploratory，未替换 LR 主线。</div>
+    </div>
+    <div class="right"><span class="pill explore">exploratory</span><span class="pill merged">code merged</span></div>
+  </div>
+
+  <div class="branch">
+    <div>
+      <div><span class="name">codex/traditional-ml-score-search</span></div>
+      <div class="desc">把所有实验整理为 ledger / review guide / results_summary，是项目从"开发"切到"汇报"的拐点。</div>
+    </div>
+    <div class="right"><span class="pill method">docs</span><span class="pill merged">merged</span></div>
+  </div>
+
+  <div class="branch">
+    <div>
+      <div><span class="name">tta-nested-fusion</span></div>
+      <div class="desc">commit <code>55da6bd</code> · TTA + 嵌套 CV 选权重。证明 0.8055 是 in-sample noise，0.7763 才是 late fusion 诚实天花板。Negative，不 merge。</div>
+    </div>
+    <div class="right"><span class="pill negative">negative</span><span class="pill orphan">not merged</span></div>
+  </div>
+
+  <div class="branch">
+    <div>
+      <div><span class="name">hair-removal-eval</span></div>
+      <div class="desc">commit <code>3f56bf0</code> · DullRazor 风格毛发去除，bagged BalAcc -0.022。Negative，不 merge。</div>
+    </div>
+    <div class="right"><span class="pill negative">negative</span><span class="pill orphan">not merged</span></div>
+  </div>
+</div>
+
+<!-- ============================================================== -->
+<h2>4 · 完整指标演进表</h2>
+<table class="data">
+  <tr><th>阶段</th><th>方法</th><th>协议</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">Bal-Acc</th><th>角色</th></tr>
+  <tr class="negative"><td>初始</td><td>image-level random split</td><td>错误协议</td><td class="num">~0.90</td><td class="num">~0.91</td><td class="num">—</td><td><span class="pill negative">leakage</span></td></tr>
+  <tr><td>方法学修正</td><td>boundary + LR + k=100</td><td>grouped seed 127</td><td class="num">0.7233</td><td class="num">0.7454</td><td class="num">0.7535</td><td>历史 baseline</td></tr>
+  <tr class="highlight"><td>★ 主线</td><td>all_abcd_grouped + LR03 + k=140</td><td>grouped seed 127</td><td class="num">0.7600</td><td class="num">0.7715</td><td class="num">0.7871</td><td><span class="pill main">official</span></td></tr>
+  <tr class="highlight"><td>★ 主线</td><td>all_abcd_grouped + LR03 + k=140</td><td>5-seed mean</td><td class="num">0.7283</td><td class="num">0.7435 ± 0.027</td><td class="num">0.7512</td><td><span class="pill main">stability</span></td></tr>
+  <tr class="explore"><td>探索</td><td>XGBoost cascade</td><td>seed 127</td><td class="num">0.7617</td><td class="num">0.7802</td><td class="num">0.8017</td><td>exploratory peak</td></tr>
+  <tr class="explore"><td>探索</td><td>XGBoost cascade</td><td>5-seed bagged</td><td class="num">0.7500</td><td class="num">0.7655</td><td class="num">0.7887</td><td>exploratory stable</td></tr>
+  <tr class="explore"><td>探索</td><td>Early fusion</td><td>seed 127</td><td class="num">0.7700</td><td class="num">0.7830</td><td class="num">0.7997</td><td>exploratory peak</td></tr>
+  <tr class="explore"><td>探索</td><td>Early fusion</td><td>5-seed mean</td><td class="num">0.7450</td><td class="num">0.7618</td><td class="num">0.7766</td><td>exploratory stable</td></tr>
+  <tr class="explore"><td>探索</td><td>Late fusion 0.5·LR + 0.5·cascade</td><td>seed 127</td><td class="num">0.7717</td><td class="num">0.7909</td><td class="num">0.8055</td><td>in-sample peak</td></tr>
+  <tr class="explore"><td>探索</td><td>Late fusion 0.5·LR + 0.5·cascade</td><td>5-seed bagged</td><td class="num">0.7417</td><td class="num">0.7607</td><td class="num">0.7763</td><td>honest ceiling</td></tr>
+  <tr class="negative"><td>验证</td><td>TTA + nested-w fusion (cell D)</td><td>5-seed bagged</td><td class="num">0.7400</td><td class="num">0.7584</td><td class="num">0.7726</td><td><span class="pill negative">no lift</span></td></tr>
+  <tr class="negative"><td>验证</td><td>Hair removal + LR03 (k=140)</td><td>5-seed bagged</td><td class="num">0.7167</td><td class="num">0.7353</td><td class="num">0.7455</td><td><span class="pill negative">-0.022</span></td></tr>
+  <tr style="background:#ede9fe"><td>扩展</td><td>MobileNetV2 ImageNet + TTA</td><td>grouped validation</td><td class="num">0.8750</td><td class="num">0.8623</td><td class="num">0.8533</td><td><span class="pill ext">DL extension only</span></td></tr>
+</table>
+
+<!-- ============================================================== -->
+<h2>5 · 探索闭环 · 完整叙事</h2>
+<div class="closure">
+  <h3>故事弧</h3>
+  <ol>
+    <li><strong>开局陷阱</strong>：image-level 划分跑出 ~90% F1，看上去很好。</li>
+    <li><strong>方法学修正</strong>：识别增强泄漏 → 切到 <code>StratifiedGroupKFold</code> by base_id，分数诚实回落到 70-78 区间。</li>
+    <li><strong>主线选定</strong>：系统化 grid search 后，<code>all_abcd_grouped + LR03 + k=140</code> 在 5-seed 稳定性下胜出，定为官方传统主线。</li>
+    <li><strong>探索性候选</strong>：XGBoost cascade、early fusion、late fusion 三条独立路线全部跑过；其中 late fusion 单 seed 见到 0.8055 BalAcc，但 5-seed bagged 回落到 0.7763，<strong>悬而未决</strong>。</li>
+    <li><strong>怀疑 → 验证</strong>：分支 <code>tta-nested-fusion</code> 用 TTA + 嵌套 CV 选权重做诚实复测，4-cell ablation 显示 0.8055 是 in-sample noise，<strong>fusion 的真上限就是 0.7763</strong>。</li>
+    <li><strong>错误归因</strong>：分析主线 144 个错误中 25 个"全错 lesion"，分桶发现 15+ 是真实的 mel/nv 表型重叠（不可救），仅 2 个属于毛发遮挡（疑似可救）。</li>
+    <li><strong>最后一击</strong>：分支 <code>hair-removal-eval</code> 跑 DullRazor 预处理 → bagged BalAcc -0.022，闭合最后一个"算法可救"的桶。</li>
+    <li><strong>闭环</strong>：0.78 BalAcc 从"经验上限"升级为"有证据的结构性上限"。剩余误差归因为生物学表型重叠，需要 dermoscopic structural features 或 DL 才能进一步突破 → 自然引出 MobileNetV2 0.8533 BalAcc 作为对照扩展。</li>
+  </ol>
+  <p style="margin-top:14px;"><strong>一句话总结</strong>：我们做了完整的方法学修正、系统化模型搜索、嵌套 CV 验证、错误归因和针对性预处理实验。诚实的传统 ML 上限是 5-seed bagged BalAcc <code>0.78</code>，由生物学表型决定；深度学习扩展可达 <code>0.85</code>，但按课程规则不进入主提交。</p>
+</div>
+
+<!-- ============================================================== -->
+<h2>6 · 人员分工（5 人小组）</h2>
+<table class="team-table">
+  <tr>
+    <th>成员</th><th>负责模块</th><th>主要文件 / 分支</th><th>讲解要点</th>
+  </tr>
+  <tr>
+    <td class="role">成员 A<br>数据 & 协议</td>
+    <td>数据加载、增强泄漏识别、grouped CV 评估协议、防泄漏检查</td>
+    <td>
+      <code>src/dataset.py</code>, <code>src/utils.py</code>,<br>
+      <code>src/evaluate.py</code>,<br>
+      <code>scripts/check_grouped_cv_outputs.py</code>
+    </td>
+    <td>为什么 image-level 90% 是假的；base_id 是怎么提取的；grouped CV 把 5-fold 数怎么切；如何用 check 脚本证明无泄漏</td>
+  </tr>
+  <tr>
+    <td class="role">成员 B<br>基础特征</td>
+    <td>color / shape / texture / contrast 四大基础特征族</td>
+    <td>
+      <code>src/features_color.py</code>,<br>
+      <code>src/features_shape.py</code>,<br>
+      <code>src/features_texture.py</code>,<br>
+      <code>src/features_contrast.py</code><br>
+      分支 <code>feature/contrast-example</code>, <code>feature/texture</code>
+    </td>
+    <td>每族 8-10 个特征的医学/图像直觉；LBP/GLCM 为什么能补 ABCD 没覆盖的纹理信息；contrast 特征怎么定义"lesion vs background"</td>
+  </tr>
+  <tr>
+    <td class="role">成员 C<br>ABCD & boundary<br>主模型</td>
+    <td>ABCD grouped 特征、boundary 复杂度、主模型 LR03 选型</td>
+    <td>
+      <code>src/features_abcd_grouped.py</code>,<br>
+      <code>src/features_boundary.py</code>,<br>
+      分支 <code>feature/abcd</code>, <code>feature/abcd-clean</code>, <code>feature/boundary-integration</code>, <code>abcd-grouped-optimization</code><br>
+      <code>docs/ABCD_GROUPED_INTEGRATION.md</code>,<br>
+      <code>docs/STRICT_GROUPED_RESULTS.md</code>
+    </td>
+    <td>主模型为什么选 LR + k=140 + C=0.3；ABCD 怎么分组（A/B/C/D block）；为什么简单模型在小样本+严格 CV 下反而最稳定</td>
+  </tr>
+  <tr>
+    <td class="role">成员 D<br>模型搜索 & 融合</td>
+    <td>grid search、XGBoost cascade、early/late fusion、TTA + nested-w 验证</td>
+    <td>
+      <code>experiments/run_ml_grid.py</code>,<br>
+      <code>experiments/run_xgb_cascade_search.py</code>,<br>
+      <code>experiments/run_early_fusion_search.py</code>,<br>
+      <code>experiments/run_fusion_ensemble.py</code>,<br>
+      <code>experiments/run_tta_nested_fusion.py</code><br>
+      分支 <code>model</code>, <code>tta-nested-fusion</code><br>
+      <code>docs/FUSION_ENSEMBLE_RESULTS.md</code>,<br>
+      <code>docs/EARLY_FUSION_RESULTS.md</code>
+    </td>
+    <td>cascade 为什么用 2 段；late fusion 的 0.5/0.5 是怎么来的；为什么 0.8055 是 in-sample noise；嵌套 CV 是怎么诚实选 weight 的</td>
+  </tr>
+  <tr>
+    <td class="role">成员 E<br>分析 & 扩展</td>
+    <td>robustness 分析、错误可视化、lesion-hard 归因、hair removal 预处理、DL 扩展</td>
+    <td>
+      <code>experiments/analyze_robustness.py</code>,<br>
+      <code>experiments/visualize_errors.py</code>,<br>
+      <code>experiments/visualize_lesion_hard.py</code>,<br>
+      <code>experiments/run_hair_removal_eval.py</code>,<br>
+      <code>experiments/train_deep.py</code>,<br>
+      <code>experiments/run_deep_lowload_night.py</code><br>
+      分支 <code>hair-removal-eval</code><br>
+      <code>docs/LESION_HARD_ERROR_ANALYSIS.md</code>,<br>
+      <code>docs/DEEP_LEARNING_EXTENSION_RESULTS.md</code>,<br>
+      <code>docs/KAGGLE_DEEP_LEARNING.md</code>
+    </td>
+    <td>原图 vs 增强图准确率差；mel/nv 25 个全错 lesion 的分桶；为什么 hair removal 反而拖累；MobileNetV2 在 Kaggle 是怎么跑的；为什么 DL 不进主提交</td>
+  </tr>
+</table>
+
+<p style="margin-top:12px;color:var(--muted);font-size:13px;">
+每位成员都要能回答 5 个问题：我的模块解决什么？符合"传统方法"要求吗？输入输出是什么？实验结果如何？最终是否被主线采用，为什么？
+</p>
+
+<!-- ============================================================== -->
+<h2>7 · 推荐展示顺序</h2>
+<ol>
+  <li>问题与数据：3 类 lesion · 200 lesion × 3 版本 = 600 张 · 课程禁止 DL 主提交</li>
+  <li>方法学修正：image-level vs grouped CV（用本页 §2 第 3 张时间线卡）</li>
+  <li>传统特征体系：让成员 B、C 各讲 30 秒</li>
+  <li>主模型选型 + 稳定性：成员 C 主讲，引出 5-seed 0.7512 BalAcc</li>
+  <li>探索性候选：cascade / early / late fusion，成员 D 主讲</li>
+  <li><strong>诚实验证</strong>：TTA + nested-w（成员 D）+ hair removal（成员 E）的两条 negative —— 这是其他组不一定有的差异化亮点</li>
+  <li>错误归因：lesion-hard 25 张的分桶图，成员 E 主讲</li>
+  <li>深度学习扩展：MobileNetV2 0.8533 作为对照，不混入主线</li>
+  <li>结论与局限：0.78 BalAcc 是传统 ML 在该数据集上的诚实上限，由生物学决定</li>
+</ol>
+
+<!-- ============================================================== -->
+<div class="footnote">
+  <strong>文件位置</strong>：<code>docs/EXPLORATION_TIMELINE.html</code> · 自包含，无外部依赖 · 浏览器直接打开<br>
+  <strong>对应仓库</strong>：<a href="https://github.com/wwoozyq/skin-lesion-classification">github.com/wwoozyq/skin-lesion-classification</a> · main HEAD <code>1ae4cfe</code> · 时间线最后更新 2026-05-28
+</div>
+
+</div>
+</body>
+</html>
