@@ -433,7 +433,73 @@ Report role:
 Model-level fusion highlight and honest stability discussion.
 ```
 
-## 12. Deep Learning Extension
+## 12. TTA + Nested-CV Fusion Weight
+
+Purpose:
+
+```text
+Attack the fusion-weight in-sample overfit and the augmentation-sensitive
+error bucket at the same time. Honest nested-CV picks the fusion weight on
+inner folds; six-transform TTA averages probabilities on the outer val fold.
+```
+
+Implementation:
+
+```text
+experiments/run_tta_nested_fusion.py   (branch tta-nested-fusion)
+```
+
+Design:
+
+```text
+Outer: 5 seeds × 5 StratifiedGroupKFold folds (grouped by base_id)
+Inner: 3-fold grouped CV on the outer train set
+w     : argmax over {0, 0.05, ..., 1.0} of inner-OOF macro-F1
+TTA   : {identity, hflip, vflip, rot90, rot180, rot270}, mean of softmax
+```
+
+Four-cell ablation, five-seed bagged:
+
+| cell | TTA | tune w | accuracy | macro-F1 | balanced accuracy |
+|---|---|---|---:|---:|---:|
+| A | no | fixed `0.5` | 0.7417 | 0.7607 | 0.7763 |
+| B | yes | fixed `0.5` | 0.7433 | 0.7610 | 0.7753 |
+| C | no | nested | 0.7383 | 0.7571 | 0.7715 |
+| D | yes | nested | 0.7400 | 0.7584 | 0.7726 |
+
+Cell `A` reproduces section 11 bagged numbers exactly, confirming the
+pipeline. Cells `B C D` move within `0.005` balanced accuracy of `A`.
+
+Mechanism check on seed `127`, cell `D` against the LR main model:
+
+| error bucket | LR main | cell D |
+|---|---:|---:|
+| total | 144 | 138 |
+| augmentation-sensitive | 69 | 57 |
+| lesion-hard | 75 | 81 |
+| all-augs-wrong lesions | 25 | 27 |
+
+Nested-CV honestly selects weight mean `0.562 ± 0.143`, not `0.5`, which
+confirms that the single-seed `0.8055` peak in section 11 was in-sample
+noise rather than an undertuned weight.
+
+Conclusion:
+
+The mechanism works directionally on a single seed — TTA does shrink the
+augmentation-sensitive error bucket by about 17%. But five-seed bagging
+absorbs that gain, because bagging already averages out the same
+augmentation-direction variance. The five-seed bagged numbers do not beat
+section 11, so this is kept as a negative result on branch
+`tta-nested-fusion` and is not merged into `main`.
+
+Report role:
+
+```text
+Negative result confirming that the late-fusion ceiling on this dataset is
+the bagged 0.7763 BalAcc number from section 11, not the single-seed 0.8055.
+```
+
+## 13. Deep Learning Extension
 
 Purpose:
 
