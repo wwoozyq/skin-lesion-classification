@@ -499,7 +499,71 @@ Negative result confirming that the late-fusion ceiling on this dataset is
 the bagged 0.7763 BalAcc number from section 11, not the single-seed 0.8055.
 ```
 
-## 13. Deep Learning Extension
+## 13. Hair-Removal Preprocessing
+
+Purpose:
+
+```text
+Test whether DullRazor-style morphological hair removal rescues the two
+hair-occluded lesions identified in docs/LESION_HARD_ERROR_ANALYSIS.md
+(ids 24 and 154) and lifts the LR main line.
+```
+
+Implementation:
+
+```text
+experiments/run_hair_removal_eval.py   (branch hair-removal-eval)
+```
+
+Pipeline:
+
+```text
+grayscale -> black-tophat with elongated rectangles (horizontal+vertical)
+          -> threshold -> dilate -> per-channel median fill inside mask
+LR main eval: LR(C=0.3, balanced) + SelectKBest(k=140) + StandardScaler
+              + StratifiedGroupKFold(5), grouped by base_id, 5-seed bagged
+```
+
+Result, five-seed bagged on the LR main pipeline:
+
+| variant | accuracy | macro-F1 | balanced accuracy |
+|---|---:|---:|---:|
+| original images | 0.7467 | 0.7632 | 0.7674 |
+| hair-removed images | 0.7167 | 0.7353 | 0.7455 |
+| delta | -0.030 | -0.028 | -0.022 |
+
+Sanity check: the original-image per-seed mean balanced accuracy in this
+script is `0.7512`, which matches the project memory baseline exactly.
+
+Per-seed breakdown (balanced accuracy):
+
+| seed | original | hair-removed | delta |
+|---:|---:|---:|---:|
+| 42 | 0.7502 | 0.7339 | -0.016 |
+| 127 | 0.7871 | 0.7597 | -0.027 |
+| 2024 | 0.7658 | 0.7452 | -0.021 |
+| 3407 | 0.7464 | 0.7232 | -0.023 |
+| 520 | 0.7065 | 0.7157 | +0.009 |
+
+Conclusion:
+
+Hair removal hurts in 4 of 5 seeds. The black-tophat detector fires on
+2 of 600 images for true hair, but it also fires weakly on real lesion
+structures (dark borders, atypical pigment network) in many of the other
+598; median-replacing those pixels destroys signal. The 2-lesion benefit
+that motivated this experiment is dominated by 598 lesions of generic
+harm. Branch `hair-removal-eval` keeps the script as negative evidence
+and is not merged.
+
+Report role:
+
+```text
+Closes the only algorithmically fixable bucket identified in
+LESION_HARD_ERROR_ANALYSIS.md as another negative result, further
+hardening the 0.78 ceiling story.
+```
+
+## 14. Deep Learning Extension
 
 Purpose:
 
