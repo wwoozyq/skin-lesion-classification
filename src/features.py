@@ -16,6 +16,11 @@ from .features_shape import extract_shape_features
 from .features_subregion import extract_subregion_features
 from .features_texture import extract_texture_features
 from .preprocess import prepare_mask
+from .preprocess_medical import (
+    PREPROCESSING_NONE,
+    SUPPORTED_PREPROCESSING,
+    apply_medical_preprocessing,
+)
 
 
 BASE_FEATURES = ("color", "shape", "texture")
@@ -85,6 +90,14 @@ FEATURE_ALIASES = {
         "gabor",
         "subregion",
     ),
+    "xgb_cascade_stage2_abcd": BASE_FEATURES + (
+        "boundary",
+        "melnv",
+        "lbp_multi",
+        "gabor",
+        "subregion",
+        "abcd_grouped",
+    ),
     "early_fusion_core": BASE_FEATURES + (
         "abcd_grouped",
         "boundary",
@@ -128,20 +141,41 @@ def resolve_feature_blocks(feature_set):
     return deduped
 
 
-def extract_features_for_image(image, mask, feature_set="all"):
+def extract_features_for_image(image, mask, feature_set="all", preprocessing=PREPROCESSING_NONE):
+    if preprocessing not in SUPPORTED_PREPROCESSING:
+        raise ValueError(
+            f"Unknown preprocessing '{preprocessing}'. Supported: {sorted(SUPPORTED_PREPROCESSING)}"
+        )
+    if preprocessing != PREPROCESSING_NONE:
+        image = apply_medical_preprocessing(image, preprocessing)
     features = {}
     for block in resolve_feature_blocks(feature_set):
         features.update(FEATURE_EXTRACTORS[block](image, mask))
     return features
 
 
-def build_feature_table(data_dir, image_ids=None, feature_set="all", mask_mode="raw"):
+def build_feature_table(
+    data_dir,
+    image_ids=None,
+    feature_set="all",
+    mask_mode="raw",
+    preprocessing=PREPROCESSING_NONE,
+):
     if image_ids is None:
         image_ids = list_image_ids(data_dir)
+    if preprocessing not in SUPPORTED_PREPROCESSING:
+        raise ValueError(
+            f"Unknown preprocessing '{preprocessing}'. Supported: {sorted(SUPPORTED_PREPROCESSING)}"
+        )
 
+    desc = f"Extracting {feature_set}"
+    if preprocessing != PREPROCESSING_NONE:
+        desc += f" (pp={preprocessing})"
     rows = []
-    for image_id in tqdm(image_ids, desc=f"Extracting {feature_set} features"):
+    for image_id in tqdm(image_ids, desc=desc):
         image = load_image(data_dir, image_id)
+        if preprocessing != PREPROCESSING_NONE:
+            image = apply_medical_preprocessing(image, preprocessing)
         mask = prepare_mask(load_mask(data_dir, image_id), mask_mode=mask_mode)
         row = {"image_id": str(image_id)}
         row.update(extract_features_for_image(image, mask, feature_set=feature_set))
