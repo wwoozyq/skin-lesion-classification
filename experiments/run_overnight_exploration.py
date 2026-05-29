@@ -422,8 +422,8 @@ def run_overnight(
         "best_cell_bagged_balanced_accuracy": best["bagged_balanced_accuracy"],
         "best_cell_bagged_macro_f1": best["bagged_macro_f1"],
         "best_cell_bagged_accuracy": best["bagged_accuracy"],
-        "beats_cell0": best["bagged_balanced_accuracy"] > baseline_row["bagged_balanced_accuracy"] + PASS_MARGIN,
-        "beats_ledger_baseline": best["bagged_balanced_accuracy"] > LEDGER_BASELINE_BAL_ACC + PASS_MARGIN,
+        "beats_cell0": bool(best["bagged_balanced_accuracy"] > baseline_row["bagged_balanced_accuracy"] + PASS_MARGIN),
+        "beats_ledger_baseline": bool(best["bagged_balanced_accuracy"] > LEDGER_BASELINE_BAL_ACC + PASS_MARGIN),
         "summary_csv": str(summary_csv),
         "per_seed_csv": str(per_seed_csv),
     }

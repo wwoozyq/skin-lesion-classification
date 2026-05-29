@@ -8,6 +8,7 @@ from .features_boundary import extract_boundary_features
 from .features_color import extract_color_features
 from .features_colorhist import extract_colorhist_features
 from .features_contrast import extract_contrast_features
+from .features_dermoscopy import extract_dermoscopy_features
 from .features_gabor import extract_gabor_features
 from .features_hog import extract_hog_features
 from .features_lbp_multi import extract_lbp_multi_features
@@ -39,6 +40,7 @@ FEATURE_EXTRACTORS = {
     "lbp_multi": extract_lbp_multi_features,
     "gabor": extract_gabor_features,
     "subregion": extract_subregion_features,
+    "dermoscopy": extract_dermoscopy_features,
 }
 
 FEATURE_ALIASES = {
@@ -97,6 +99,23 @@ FEATURE_ALIASES = {
         "gabor",
         "subregion",
         "abcd_grouped",
+    ),
+    "all_abcd_grouped_dermoscopy": BASE_FEATURES + ("abcd_grouped", "dermoscopy"),
+    "xgb_cascade_stage2_dermoscopy": BASE_FEATURES + (
+        "boundary",
+        "melnv",
+        "lbp_multi",
+        "gabor",
+        "subregion",
+        "dermoscopy",
+    ),
+    "xgb_cascade_stage2_dermoscopy_a1": BASE_FEATURES + (
+        "boundary",
+        "melnv",
+        "lbp_multi",
+        "gabor",
+        "subregion",
+        "dermoscopy",
     ),
     "early_fusion_core": BASE_FEATURES + (
         "abcd_grouped",
