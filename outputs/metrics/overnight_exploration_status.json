@@ -1,0 +1,18 @@
+{
+  "status": "success",
+  "note": "JSON write crashed in runner on numpy bool; this status.json reconstructed from summary csv.",
+  "ledger_baseline_bagged_balanced_accuracy": 0.7887,
+  "cell0_bagged_balanced_accuracy": 0.7623280423280424,
+  "n_cells_run": 6,
+  "stacks_run": [
+    "A1_shades_of_gray_plus_B1"
+  ],
+  "best_cell": "A1_shades_of_gray",
+  "best_cell_bagged_balanced_accuracy": 0.7824338624338626,
+  "best_cell_bagged_macro_f1": 0.76943407960199,
+  "best_cell_bagged_accuracy": 0.7466666666666667,
+  "beats_cell0": true,
+  "beats_ledger_baseline": false,
+  "summary_csv": "outputs/metrics/overnight_exploration_summary.csv",
+  "per_seed_csv": "outputs/metrics/overnight_exploration_per_seed.csv"
+}

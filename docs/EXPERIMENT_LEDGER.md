@@ -596,3 +596,201 @@ Report role:
 ```text
 Optional extension and comparison against traditional image processing.
 ```
+
+## 15. Medical Preprocessing + Cascade Variant Sweep
+
+Purpose:
+
+```text
+Test whether dermoscopy-grade preprocessing (color constancy, CLAHE,
+hemoglobin/melanin decomposition) or adding the ABCD grouped block to
+Stage 2 can push the cascade bagged BalAcc above section 9's 0.7887.
+```
+
+Implementation:
+
+```text
+src/preprocess_medical.py
+src/features.py (+preprocessing parameter, xgb_cascade_stage2_abcd alias)
+experiments/run_overnight_exploration.py
+experiments/run_variant_sweep_a1.py
+docs/OVERNIGHT_EXPLORATION_PLAN.md
+docs/OVERNIGHT_EXPLORATION_RESULTS.md
+```
+
+Cells:
+
+```text
+A1 shades_of_gray   color constancy (Finlayson-Trezzi, p=6)
+A2 clahe_lab_L      local contrast (Zuiderveld, clip_limit=0.01)
+A3 hb_melanin       chromophore projection (Tsumura OD basis, alpha=1)
+B1 stage2_plus_abcd add abcd_grouped block to Stage 2 features
+```
+
+Protocol: 5-seed x 5-fold StratifiedGroupKFold grouped by base_id,
+seeds [42, 127, 2024, 3407, 520], soft cascade composition.
+
+Overnight cell results (Stage 2 variant pinned to `d2-more-trees, k=all`):
+
+| cell | bagged BalAcc | per-seed std | verdict |
+|---|---:|---:|---|
+| 0 baseline (none) | 0.7623 | 0.0140 | weak anchor |
+| 1 A1 shades_of_gray | 0.7824 | 0.0023 | apparent +0.0201 |
+| 2 A2 clahe_lab_L | 0.7468 | 0.0100 | regress |
+| 3 A3 hb_melanin | 0.7466 | 0.0069 | regress |
+| 4 B1 stage2+abcd | 0.7676 | 0.0149 | marginal |
+| 5 A1 + B1 | 0.7774 | 0.0060 | worse than A1 alone |
+
+Variant sweep (18 configs: 3 Stage 2 variants x 3 k_features x {none, A1}):
+
+| stage 2 variant | k | no-pp BalAcc | A1 BalAcc | delta |
+|---|---|---:|---:|---:|
+| strong-reg | 100 | 0.7830 | 0.7688 | -0.0142 |
+| strong-reg | 120 | 0.7812 | 0.7747 | -0.0065 |
+| strong-reg | all | 0.7699 | 0.7820 | +0.0120 |
+| d2-more-trees | 100 | 0.7825 | 0.7688 | -0.0137 |
+| d2-more-trees | 120 | 0.7807 | 0.7801 | -0.0006 |
+| d2-more-trees | all | 0.7623 | 0.7824 | +0.0201 |
+| deeper | 100 | 0.7719 | 0.7767 | +0.0048 |
+| **deeper** | **120** | **0.7839** | 0.7821 | -0.0018 |
+| deeper | all | 0.7633 | 0.7805 | +0.0172 |
+
+Conclusion:
+
+```text
+No new winner. The best absolute config is `deeper, k=120, no preprocessing`
+at 0.7839 bagged BalAcc, within sampling noise of section 9's 0.7887
+(saved as outputs/models/xgb_cascade_deeper_k120_soft.joblib).
+
+A1 shades_of_gray lifts under-regularized k=all variants by +0.012 to
++0.020 and collapses per-seed std 3-6x under every variant, but on the
+strong deeper k=120 variant it costs -0.0018 BalAcc. The overnight
+runner's apparent +0.0201 win was an artifact of pinning cell 0 to one
+of the worst configurations.
+
+A2 CLAHE and A3 hb_melanin regress under every config tested.
+B1 abcd_grouped in Stage 2 is marginal on the weak baseline and
+redundant when stacked with A1.
+```
+
+Submission impact:
+
+```text
+Cascade-track candidate stays section 9's deeper k=120 soft cascade with
+no preprocessing. Main submission line (section 8 LR) is unchanged.
+A1/A2/A3/B1 enter the report as documented negative results.
+```
+
+Report role:
+
+```text
+Negative-result section reinforcing the "we tried everything" narrative
+and demonstrating awareness of dermoscopy-grade preprocessing methods.
+```
+
+## 16. Dermoscopy Structural Features
+
+Purpose:
+
+```text
+Add 22 clinically motivated dermoscopy structural features (color
+diversity, blue-white veil, regression-like patches, PCA-axis spatial
+color asymmetry, vascular emphasis) designed with lesion-relative Lab
+percentile thresholds (illuminant-robust without shades_of_gray, which
+§15 documented as net-negative on the strong cascade). Test against
+the main LR line and the locked deeper k=120 cascade.
+```
+
+Implementation:
+
+```text
+src/features_dermoscopy.py
+src/features.py (+dermoscopy block, +3 aliases:
+  all_abcd_grouped_dermoscopy, xgb_cascade_stage2_dermoscopy, *_a1)
+experiments/run_dermoscopy_features.py
+docs/DERMOSCOPY_FEATURES_PLAN.md
+docs/DERMOSCOPY_FEATURES_RESULTS.md
+```
+
+Cells:
+
+```text
+A) main_lr_dermoscopy        all_abcd_grouped + dermoscopy (252 features),
+                             LR(C=0.3, balanced) + SelectKBest(k=140)
+B) cascade_s2_dermoscopy     Stage 1 unchanged, Stage 2 = base + dermoscopy
+                             (309 features), deeper k=120 soft cascade
+LOO main / LOO cascade       5-group leave-one-out ablation on each pipeline
+```
+
+Protocol: 5-seed × 5-fold StratifiedGroupKFold grouped by base_id,
+seeds [42, 127, 2024, 3407, 520].
+
+Seed-127 sanity (single seed gate):
+
+| pipeline | BalAcc | macro-F1 | Acc | Δ vs baseline |
+|---|---:|---:|---:|---:|
+| main_lr baseline (ledger §8) | 0.7871 | 0.7715 | 0.7600 | — |
+| main_lr + dermoscopy | 0.7585 | 0.7486 | 0.7283 | -0.0286 ❌ |
+| cascade baseline (deeper k=120, no-pp) | 0.7941 | 0.7748 | 0.7567 | — |
+| cascade + dermoscopy | 0.7812 | 0.7617 | 0.7417 | -0.0129 ⚠ (in noise) |
+
+Full 5-seed bagged:
+
+| pipeline | bagged BalAcc | per-seed mean | per-seed std |
+|---|---:|---:|---:|
+| main_lr baseline (ledger §8) | — | 0.7512 | — |
+| main_lr + dermoscopy | 0.7495 | 0.7411 | 0.0140 |
+| cascade baseline (deeper k=120, no-pp) | **0.7839** | 0.7683 | 0.0206 |
+| cascade + dermoscopy | 0.7722 | 0.7661 | 0.0131 |
+
+Leave-one-group-out (best LOO subset vs respective baseline):
+
+| pipeline | best LOO | bagged BalAcc | Δ vs +all dermoscopy | Δ vs baseline |
+|---|---|---:|---:|---:|
+| main LR | drop color_diversity | 0.7554 | +0.0059 | -0.0026 (per-seed -0.0026) |
+| cascade | drop asymmetry | 0.7807 | +0.0085 | -0.0032 (per-seed +0.0062) |
+
+Conclusion:
+
+```text
+No new winner. Dermoscopy block is net-negative on both pipelines.
+
+Main LR drops per-seed mean 0.7512 → 0.7411 (-0.0101). Adding 22
+features into a SelectKBest(k=140) pool of 230 displaces some of the
+previously-selected ABCD-grouped color features without adding more
+signal than they removed. Even the best LOO subset (drop_color_diversity)
+recovers to 0.7486 per-seed mean, still 0.0026 below baseline.
+
+Cascade drops bagged 0.7839 → 0.7722 (-0.0117) but per-seed mean only
+-0.0022 (0.7683 → 0.7661). Best LOO subset (drop_asymmetry) lifts
+bagged to 0.7807 (per-seed +0.0062), but the lift is well inside the
+multiple-testing noise floor (10 LOO comparisons, expected max-of-10
+≈ 0.022 at σ=0.014). PCA-axis asymmetry features were the surprise
+negative — likely because PCA axis direction flips between paired
+augmented copies at borderline eccentricities, generating high
+intra-base-id feature variance.
+
+The one durable benefit is cascade per-seed std collapse 0.0206 →
+0.0131 (1.6× tighter), matching the A1 shades_of_gray signature
+documented in §15: "regularization that's already absorbed by the
+strong cascade configuration." Not worth -0.012 bagged BalAcc.
+```
+
+Submission impact:
+
+```text
+Main submission stays section 8's `all_abcd_grouped + LR(C=0.3) + k=140`.
+Cascade-track candidate stays section 9 / §15's deeper k=120 soft cascade
+with no preprocessing. Dermoscopy block joins the documented
+negative-result roster.
+```
+
+Report role:
+
+```text
+Negative-result section showing systematic dermoscopy-domain feature
+engineering with rotation-invariant design (PCA principal axis,
+lesion-relative Lab percentiles, eccentricity safeguard). Reinforces
+the "regularization is already absorbed" story from §15 (A1) and the
+broader "we tried everything" narrative.
+```
