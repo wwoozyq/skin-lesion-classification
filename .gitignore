@@ -15,6 +15,7 @@ outputs/models/*.pth
 outputs/models/*.pt
 outputs/metrics/*.csv
 outputs/metrics/*.txt
+outputs/metrics/*.log
 outputs/metrics/*/
 outputs/figures/
 outputs/figures/*.png
